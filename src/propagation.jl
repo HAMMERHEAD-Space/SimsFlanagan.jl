@@ -7,6 +7,11 @@ Propagation functions for Sims-Flanagan transcription.
 The Sims-Flanagan method uses Kepler propagation between impulsive ΔV maneuvers
 applied at segment midpoints. This file provides the core propagation routines
 using AstroCoords for coordinate transformations.
+
+Supports multiple propulsion types:
+- Spacecraft: Constant thrust (chemical/electric)
+- SEPSpacecraft: Solar Electric Propulsion (thrust varies with solar distance)
+- SolarSail: Solar radiation pressure (no propellant consumption)
 =#
 
 """
@@ -86,7 +91,7 @@ The segment is divided into two halves:
 - `throttle::SVector{3}`: Throttle vector (magnitude ≤ 1, direction = thrust direction)
 - `Δt::Number`: Segment duration [s]
 - `μ::Number`: Gravitational parameter [km³/s²]
-- `spacecraft::Spacecraft`: Spacecraft parameters
+- `spacecraft::AbstractSpacecraft`: Spacecraft/propulsion parameters
 - `forward::Bool`: If true, propagate forward; if false, propagate backward
 
 # Returns
@@ -99,7 +104,7 @@ function propagate_segment(
     throttle::AbstractVector{ThT},
     Δt::DTT,
     μ::MuT,
-    spacecraft::Spacecraft;
+    spacecraft::AbstractSpacecraft;
     forward::Val{direction} = Val(true),
     cutoff_threshold::Number = 10.0 * eps(promote_type(RT, VT, MT, ThT, DTT, MuT)),
 ) where {RT<:Number,VT<:Number,MT<:Number,ThT<:Number,DTT<:Number,MuT<:Number,direction}
@@ -111,21 +116,31 @@ function propagate_segment(
     # Throttle magnitude (clamped to [0, 1])
     throttle_mag = min(norm(throttle), one(ThT))
 
-    # Compute ΔV from rocket equation approximation
-    vex = exhaust_velocity(spacecraft)  # [m/s]
-    thrust = spacecraft.thrust * throttle_mag  # Actual thrust [N]
+    # Coast to midpoint first to get position for thrust calculation
+    if direction
+        r_mid, v_mid = kepler_propagate(r, v, half_Δt, μ)
+    else
+        r_mid, v_mid = kepler_propagate(r, v, -half_Δt, μ)
+    end
 
-    # Mass flow rate: ṁ = thrust / vex
-    mdot = thrust / vex  # [kg/s]
+    # Compute thrust at midpoint position (important for SEP and solar sails)
+    thrust = compute_thrust(spacecraft, r_mid, throttle_mag)  # [N]
+
+    # Mass flow rate [kg/s]
+    mdot = compute_mass_flow(spacecraft, thrust)
 
     # Mass consumed during segment
     Δm = mdot * Δt
 
     # Clamp mass change to avoid negative mass
-    Δm = min(Δm, m)
+    if has_propellant_consumption(spacecraft)
+        Δm = min(Δm, m)
+    else
+        Δm = zero(T)
+    end
 
-    # Average mass during burn
-    m_avg = m - Δm / 2
+    # Average mass during burn (use current mass for solar sails)
+    m_avg = has_propellant_consumption(spacecraft) ? m - Δm / 2 : m
 
     # ΔV magnitude [m/s -> km/s]
     Δv_mag = (thrust * Δt / m_avg) / 1000  # Convert m/s to km/s
@@ -138,16 +153,14 @@ function propagate_segment(
     end
 
     if direction
-        # Forward propagation: coast half, impulse, coast half
-        r1, v1 = kepler_propagate(r, v, half_Δt, μ)
-        v1_plus = v1 + Δv_vec
-        rf, vf = kepler_propagate(r1, v1_plus, half_Δt, μ)
+        # Forward propagation: we already coasted to midpoint, apply impulse, coast rest
+        v_mid_plus = v_mid + Δv_vec
+        rf, vf = kepler_propagate(r_mid, v_mid_plus, half_Δt, μ)
         mf = m - Δm
     else
-        # Backward propagation: coast half backward, impulse (negative), coast half backward
-        r1, v1 = kepler_propagate(r, v, -half_Δt, μ)
-        v1_minus = v1 - Δv_vec  # Subtract because we're going backward
-        rf, vf = kepler_propagate(r1, v1_minus, -half_Δt, μ)
+        # Backward propagation: we already coasted backward to midpoint, apply negative impulse
+        v_mid_minus = v_mid - Δv_vec  # Subtract because we're going backward
+        rf, vf = kepler_propagate(r_mid, v_mid_minus, -half_Δt, μ)
         mf = m + Δm  # Mass increases going backward
     end
 
@@ -166,7 +179,7 @@ Propagate multiple segments of a Sims-Flanagan leg.
 - `throttles::AbstractVector{SVector{3}}`: Throttle vectors for each segment
 - `Δt_seg::Number`: Duration of each segment [s]
 - `μ::Number`: Gravitational parameter [km³/s²]
-- `spacecraft::Spacecraft`: Spacecraft parameters
+- `spacecraft::AbstractSpacecraft`: Spacecraft/propulsion parameters
 - `forward::Bool`: If true, propagate forward; if false, propagate backward
 
 # Returns
@@ -179,7 +192,7 @@ function propagate_leg(
     throttles::AbstractVector{<:AbstractVector{ThT}},
     Δt_seg::DTT,
     μ::MuT,
-    spacecraft::Spacecraft;
+    spacecraft::AbstractSpacecraft;
     forward::Val{direction} = Val(true),
     cutoff_threshold::Number = eps(promote_type(RT, VT, MT, ThT, DTT, MuT)),
 ) where {RT<:Number,VT<:Number,MT<:Number,ThT<:Number,DTT<:Number,MuT<:Number,direction}
@@ -248,11 +261,8 @@ function compute_mismatch(
     # Backward propagation
     throttles_bwd = throttles[(n_fwd+1):end]
 
-    # Estimate final mass (simple approximation for backward propagation start)
-    vex = exhaust_velocity(problem.spacecraft)
-    total_mass_flow =
-        sum(norm(t) * problem.spacecraft.thrust / vex * Δt_seg for t in throttles)
-    mf_estimate = max(problem.spacecraft.mass - total_mass_flow, problem.spacecraft.mass)
+    # Estimate final mass
+    mf_estimate = estimate_final_mass(problem, throttles)
 
     # Reverse the backward throttles for proper ordering
     r_bwd, v_bwd, m_bwd, _ = propagate_leg(
@@ -277,6 +287,37 @@ function compute_mismatch(
 end
 
 """
+    estimate_final_mass(problem, throttles)
+
+Estimate the final mass for backward propagation initialization.
+
+For propellant-consuming systems, estimates mass consumption.
+For solar sails, mass is constant.
+"""
+function estimate_final_mass(problem::SimsFlanaganProblem, throttles::AbstractVector)
+    spacecraft = problem.spacecraft
+
+    if !has_propellant_consumption(spacecraft)
+        # Solar sails have constant mass
+        return spacecraft.mass
+    end
+
+    # For thrust systems, estimate mass consumption
+    Δt_seg = problem.tof / problem.options.n_segments
+    vex = exhaust_velocity(spacecraft)
+
+    # Approximate using reference thrust (for SEP, this is conservative)
+    thrust_ref = if spacecraft isa SEPSpacecraft
+        spacecraft.thrust_ref
+    else
+        spacecraft.thrust
+    end
+
+    total_mass_flow = sum(norm(t) * thrust_ref / vex * Δt_seg for t in throttles)
+    return max(spacecraft.mass - total_mass_flow, spacecraft.mass * 0.1)
+end
+
+"""
     compute_total_Δv(throttles, Δt_seg, spacecraft)
 
 Compute the total ΔV for a given set of throttles.
@@ -284,11 +325,49 @@ Compute the total ΔV for a given set of throttles.
 # Arguments
 - `throttles::AbstractVector{SVector{3}}`: Throttle vectors for all segments
 - `Δt_seg::Number`: Duration of each segment [s]
-- `spacecraft::Spacecraft`: Spacecraft parameters
+- `spacecraft::AbstractSpacecraft`: Spacecraft/propulsion parameters
 
 # Returns
 - `total_Δv::Number`: Total ΔV [km/s]
 """
+function compute_total_Δv(
+    throttles::AbstractVector{<:AbstractVector{ThT}},
+    Δt_seg::DT,
+    spacecraft::AbstractSpacecraft;
+    r_ref::AbstractVector = SVector{3,Float64}(1.495978707e8, 0.0, 0.0),  # Reference position for thrust calc
+) where {ThT<:Number,DT<:Number}
+
+    T = promote_type(ThT, DT, typeof(spacecraft.mass))
+    total_Δv = zero(T)
+    m = T(spacecraft.mass)
+
+    for throttle in throttles
+        throttle_mag = min(norm(throttle), one(T))
+
+        # Compute thrust (use reference position for consistency)
+        thrust = compute_thrust(spacecraft, r_ref, throttle_mag)
+
+        # Mass flow
+        mdot = compute_mass_flow(spacecraft, thrust)
+        Δm = mdot * Δt_seg
+
+        if has_propellant_consumption(spacecraft)
+            Δm = min(Δm, m)
+            m_avg = m - Δm / 2
+        else
+            Δm = zero(T)
+            m_avg = m
+        end
+
+        Δv = (thrust * Δt_seg / m_avg) / 1000  # Convert to km/s
+        total_Δv += Δv
+        m -= Δm
+    end
+
+    return total_Δv
+end
+
+# Backward-compatible version for constant-thrust spacecraft
 function compute_total_Δv(
     throttles::AbstractVector{<:AbstractVector{ThT}},
     Δt_seg::DT,
@@ -314,4 +393,5 @@ function compute_total_Δv(
 
     return total_Δv
 end
+
 

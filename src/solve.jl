@@ -4,7 +4,9 @@ export simsflanagan_solve
 Solver functions for Sims-Flanagan transcription.
 
 Uses Optimization.jl with OptimizationOptimJL for the NLP solve.
+Supports multiple propulsion types: constant thrust, SEP, and solar sails.
 =#
+
 """
     throttles_to_vector(throttles)
 
@@ -144,6 +146,8 @@ end
     compute_segment_masses(problem, throttles)
 
 Compute the mass at each segment boundary during forward propagation.
+
+For solar sails, mass remains constant throughout the trajectory.
 """
 function compute_segment_masses(
     problem::SimsFlanaganProblem,
@@ -151,16 +155,27 @@ function compute_segment_masses(
 )
     n_seg = problem.options.n_segments
     Δt_seg = problem.tof / n_seg
+    spacecraft = problem.spacecraft
 
-    T = typeof(problem.spacecraft.mass)
+    T = typeof(spacecraft.mass)
     masses = Vector{T}(undef, n_seg + 1)
-    masses[1] = problem.spacecraft.mass
+    masses[1] = spacecraft.mass
 
-    vex = exhaust_velocity(problem.spacecraft)
+    # Solar sails have constant mass
+    if !has_propellant_consumption(spacecraft)
+        for i = 1:n_seg
+            masses[i+1] = masses[1]
+        end
+        return masses
+    end
+
+    # For propellant-consuming systems
+    vex = exhaust_velocity(spacecraft)
+    ref_thrust = get_reference_thrust(spacecraft)
 
     for i = 1:n_seg
         throttle_mag = min(norm(throttles[i]), one(T))
-        thrust = problem.spacecraft.thrust * throttle_mag
+        thrust = ref_thrust * throttle_mag
         mdot = thrust / vex
         Δm = mdot * Δt_seg
         Δm = min(Δm, masses[i])
