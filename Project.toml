@@ -1,10 +1,26 @@
 name = "SimsFlanagan"
 uuid = "52d4a9ed-7cfd-4ff0-8464-9a96327c0b1a"
 authors = ["Jordan Murphy <jmurphy6895@gmail.com> and contributors"]
-version = "1.0.0-DEV"
+version = "0.1.0"
+
+[deps]
+AstroCoords = "27fb9038-6a9d-4e07-8d5d-d0805b53c4cb"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+Lambert = "66f5ad62-9998-49cb-a01c-13bfcd13cbb1"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
+OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-julia = "1.6.7"
+AstroCoords = "0.3"
+ForwardDiff = "1.3"
+Lambert = "0.1"
+LinearAlgebra = "1.11"
+Optimization = "4"
+OptimizationOptimJL = "0.4"
+StaticArrays = "1.9"
+julia = "1.10, 1.11"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

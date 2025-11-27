@@ -1,5 +1,17 @@
 module SimsFlanagan
 
-# Write your package code here.
+using LinearAlgebra
+using StaticArrays
 
-end
+using AstroCoords
+using Lambert
+
+using Optimization
+using OptimizationOptimJL
+
+include("types.jl")
+include("propagation.jl")
+include("problem.jl")
+include("solve.jl")
+
+end # module SimsFlanagan
