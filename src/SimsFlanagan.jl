@@ -2,13 +2,25 @@ module SimsFlanagan
 
 using LinearAlgebra
 using StaticArrays
+using Random
 
+# SciMLBase interface - we extend these functions
+using SciMLBase
+import SciMLBase: solve, remake
+
+# Astrodynamics
 using AstroCoords
-using Lambert
+import Lambert  # import to avoid solve conflict
 
-using Optimization
-using OptimizationOptimJL
+# Optimization - import to avoid solve conflict  
+import Optimization
+using OptimizationMOI
+using OptimizationMadNLP
+import MadNLP
+import MadNLPMumps
+using ForwardDiff
 
+include("utils.jl")
 include("types.jl")
 include("propagation.jl")
 include("problem.jl")

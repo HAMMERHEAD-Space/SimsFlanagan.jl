@@ -1,8 +1,11 @@
 @testset "Types" begin
 
     @testset "Spacecraft (constant thrust)" begin
-        sc = Spacecraft(1000.0, 0.5, 3000.0)
-        @test sc.mass == 1000.0
+        # Spacecraft(dry_mass, wet_mass, thrust, isp)
+        sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)  # 200 kg dry, 800 kg propellant
+        @test sc.dry_mass == 200.0
+        @test sc.wet_mass == 800.0
+        @test mass(sc) == 1000.0  # total mass
         @test sc.thrust == 0.5
         @test sc.isp == 3000.0
         @test sc isa AbstractSpacecraft
@@ -25,9 +28,12 @@
 
     @testset "SEPSpacecraft" begin
         # SEP with 0.5 N thrust at 1 AU, 3000s Isp
+        # SEPSpacecraft(dry_mass, wet_mass, thrust_ref, isp, r_ref)
         r_1AU = 1.495978707e8  # km
-        sep = SEPSpacecraft(1000.0, 0.5, 3000.0, r_1AU)
-        @test sep.mass == 1000.0
+        sep = SEPSpacecraft(200.0, 800.0, 0.5, 3000.0, r_1AU)
+        @test sep.dry_mass == 200.0
+        @test sep.wet_mass == 800.0
+        @test mass(sep) == 1000.0
         @test sep.thrust_ref == 0.5
         @test sep.isp == 3000.0
         @test sep.r_ref == r_1AU
@@ -56,14 +62,17 @@
         @test SimsFlanagan.has_propellant_consumption(sep) == true
 
         # Validation
-        @test_throws ArgumentError SEPSpacecraft(0.0, 0.5, 3000.0)  # zero mass
-        @test_throws ArgumentError SEPSpacecraft(1000.0, -0.5, 3000.0)  # negative thrust
+        @test_throws ArgumentError SEPSpacecraft(0.0, 0.0, 0.5, 3000.0, r_1AU)  # zero dry mass
+        @test_throws ArgumentError SEPSpacecraft(100.0, 100.0, -0.5, 3000.0, r_1AU)  # negative thrust
     end
 
     @testset "SolarSail" begin
-        # Solar sail: 100 kg, 1000 m² sail, 0.9 reflectivity
+        # Solar sail: 100 kg dry mass, 1000 m² sail, 0.9 reflectivity
+        # SolarSail(dry_mass, area, reflectivity, r_ref; wet_mass)
         sail = SolarSail(100.0, 1000.0, 0.9)
-        @test sail.mass == 100.0
+        @test sail.dry_mass == 100.0
+        @test sail.wet_mass == 0.0  # default
+        @test mass(sail) == 100.0
         @test sail.area == 1000.0
         @test sail.reflectivity == 0.9
         @test sail isa AbstractSpacecraft
@@ -78,7 +87,7 @@
         # Test thrust computation (F = m × a)
         r_1AU = SVector{3}(1.495978707e8, 0.0, 0.0)
         thrust_1AU = SimsFlanagan.compute_thrust(sail, r_1AU, 1.0)
-        @test thrust_1AU ≈ sail.mass * a_c
+        @test thrust_1AU ≈ mass(sail) * a_c
 
         # Test thrust at 2 AU (1/4 due to inverse square)
         r_2AU = SVector{3}(2 * 1.495978707e8, 0.0, 0.0)
@@ -102,7 +111,7 @@
         opts = SimsFlanaganOptions()
         @test opts.n_segments == 10
         @test opts.n_fwd == 5
-        @test opts.tol == 1e-8
+        @test opts.tol == 1e-6
         @test opts.max_iter == 1000
         @test opts.verbosity == 1
 
