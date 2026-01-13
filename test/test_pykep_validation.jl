@@ -11,10 +11,10 @@ km and km/s. Values are converted as needed.
 @testset "PyKEP Validation" begin
 
     # Heliocentric constants (matching PyKEP)
-    const MU_SUN_SI = 1.32712440018e20  # m³/s² (PyKEP uses SI)
-    const MU_SUN = 1.32712440018e11     # km³/s² (SimsFlanagan uses km)
-    const AU_M = 1.495978707e11         # m (1 AU in meters)
-    const AU_KM = 1.495978707e8         # km (1 AU in km)
+    MU_SUN_SI = 1.32712440018e20  # m³/s² (PyKEP uses SI)
+    MU_SUN = 1.32712440018e11     # km³/s² (SimsFlanagan uses km)
+    AU_M = 1.495978707e11         # m (1 AU in meters)
+    AU_KM = 1.495978707e8         # km (1 AU in km)
 
     @testset "Unit conversions" begin
         # Verify our unit conversions are correct
@@ -69,9 +69,8 @@ km and km/s. Values are converted as needed.
 
         # Zero throttle should give same result as pure Kepler propagation
         throttle_zero = SVector{3}(0.0, 0.0, 0.0)
-        rf_seg, vf_seg, mf_seg, Δv = SimsFlanagan.propagate_segment(
-            r0, v0, m0, throttle_zero, Δt, MU_SUN, sc
-        )
+        rf_seg, vf_seg, mf_seg, Δv =
+            SimsFlanagan.propagate_segment(r0, v0, m0, throttle_zero, Δt, MU_SUN, sc)
 
         rf_kep, vf_kep = SimsFlanagan.kepler_propagate(r0, v0, Δt, MU_SUN)
 
@@ -140,12 +139,26 @@ km and km/s. Values are converted as needed.
 
         # Forward propagation
         rf, vf, mf, Δv_fwd = SimsFlanagan.propagate_segment(
-            r0, v0, m0, throttle, Δt, MU_SUN, sc; forward=Val(true)
+            r0,
+            v0,
+            m0,
+            throttle,
+            Δt,
+            MU_SUN,
+            sc;
+            forward = Val(true),
         )
 
         # Backward propagation from forward result
         r_back, v_back, m_back, Δv_bwd = SimsFlanagan.propagate_segment(
-            rf, vf, mf, throttle, Δt, MU_SUN, sc; forward=Val(false)
+            rf,
+            vf,
+            mf,
+            throttle,
+            Δt,
+            MU_SUN,
+            sc;
+            forward = Val(false),
         )
 
         # Should return to original state
@@ -164,8 +177,17 @@ km and km/s. Values are converted as needed.
         tof = 86400.0 * 120
 
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob = simsflanagan_problem(r0, v0, rf, vf, tof, MU_SUN, sc;
-            n_segments=4, verbosity=0)
+        prob = simsflanagan_problem(
+            r0,
+            v0,
+            rf,
+            vf,
+            tof,
+            MU_SUN,
+            sc;
+            n_segments = 4,
+            verbosity = 0,
+        )
 
         LU, VU, MU = SimsFlanagan.get_canonical_scales(prob)
 

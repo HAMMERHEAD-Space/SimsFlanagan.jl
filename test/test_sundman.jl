@@ -6,11 +6,11 @@ using Test
 using SimsFlanagan
 using LinearAlgebra
 
-# Constants
-const MU_SUN = 1.32712440018e11  # km³/s²
-const AU = 1.495978707e8  # km
-
 @testset "Sundman Transformation" begin
+
+    # Constants
+    MU_SUN = 1.32712440018e11  # km³/s²
+    AU = 1.495978707e8  # km
 
     @testset "Equal segments when c=0" begin
         r0 = [AU, 0.0, 0.0]

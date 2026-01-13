@@ -233,14 +233,14 @@
         @testset "Solar Sail" begin
             # Solar sails are designed for heliocentric orbits, use sun-centered problem
             sail = SolarSail(100.0, 5000.0, 0.9)
-            
+
             # Sun-centered initial and final conditions (similar to test at line 114)
             r0_sun = [r_1AU, 0.0, 0.0]
             v0_sun = [0.0, 29.78, 0.0]
             rf_sun = [r_1AU * 1.02, 0.0, 0.0]
             vf_sun = [0.0, 29.5, 0.0]
             tof_sun = 86400.0 * 370  # 60 days
-            
+
             prob = simsflanagan_problem(
                 r0_sun,
                 v0_sun,
