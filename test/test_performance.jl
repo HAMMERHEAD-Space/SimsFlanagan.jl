@@ -40,18 +40,13 @@ const sail_perf = SolarSail(200.0, 100.0, 0.9, 1.495978707e8)
         end
 
         @testset "SEPSpacecraft" begin
-            allocs_vec = check_allocs(
-                SEPSpacecraft,
-                (Float64, Float64, Float64, Float64, Float64),
-            )
+            allocs_vec =
+                check_allocs(SEPSpacecraft, (Float64, Float64, Float64, Float64, Float64))
             @test length(allocs_vec) == 0
         end
 
         @testset "SolarSail" begin
-            allocs_vec = check_allocs(
-                SolarSail,
-                (Float64, Float64, Float64, Float64),
-            )
+            allocs_vec = check_allocs(SolarSail, (Float64, Float64, Float64, Float64))
             @test length(allocs_vec) == 0
         end
     end
@@ -101,26 +96,20 @@ const sail_perf = SolarSail(200.0, 100.0, 0.9, 1.495978707e8)
 
     @testset "Mass Flow Computation — Zero Allocation" begin
         @testset "Spacecraft" begin
-            allocs_vec = check_allocs(
-                SimsFlanagan.compute_mass_flow,
-                (typeof(sc_perf), Float64),
-            )
+            allocs_vec =
+                check_allocs(SimsFlanagan.compute_mass_flow, (typeof(sc_perf), Float64))
             @test length(allocs_vec) == 0
         end
 
         @testset "SEPSpacecraft" begin
-            allocs_vec = check_allocs(
-                SimsFlanagan.compute_mass_flow,
-                (typeof(sep_perf), Float64),
-            )
+            allocs_vec =
+                check_allocs(SimsFlanagan.compute_mass_flow, (typeof(sep_perf), Float64))
             @test length(allocs_vec) == 0
         end
 
         @testset "SolarSail" begin
-            allocs_vec = check_allocs(
-                SimsFlanagan.compute_mass_flow,
-                (typeof(sail_perf), Float64),
-            )
+            allocs_vec =
+                check_allocs(SimsFlanagan.compute_mass_flow, (typeof(sail_perf), Float64))
             @test length(allocs_vec) == 0
         end
     end
