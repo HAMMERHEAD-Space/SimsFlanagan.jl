@@ -1,0 +1,3 @@
+[default.extend-words]
+# Custom dictionary entries for spell checking
+AAS = "AAS"  # Astronomical unit system or other technical acronym
