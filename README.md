@@ -1,6 +1,9 @@
 # SimsFlanagan.jl
 
 [![Build Status](https://github.com/HAMMERHEAD-Space/SimsFlanagan.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/HAMMERHEAD-Space/SimsFlanagan.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![codecov](https://codecov.io/gh/HAMMERHEAD-Space/SimsFlanagan.jl/graph/badge.svg?token=RVSG7F2BNO)](https://codecov.io/gh/HAMMERHEAD-Space/SimsFlanagan.jl)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 A Julia package for low-thrust trajectory optimization using the Sims-Flanagan transcription method. Supports multiple propulsion types including constant thrust, solar electric propulsion (SEP), and solar sails. Built on the SciML ecosystem with automatic differentiation support.
 
