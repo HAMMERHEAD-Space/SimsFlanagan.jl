@@ -1,7 +1,7 @@
 name = "SimsFlanagan"
 uuid = "52d4a9ed-7cfd-4ff0-8464-9a96327c0b1a"
-authors = ["Jordan Murphy <jmurphy6895@gmail.com> and contributors"]
 version = "0.1.0"
+authors = ["Jordan Murphy <jmurphy6895@gmail.com> and contributors"]
 
 [deps]
 AstroCoords = "27fb9038-6a9d-4e07-8d5d-d0805b53c4cb"
@@ -22,7 +22,7 @@ AstroCoords = "0.4"
 ForwardDiff = "1"
 Lambert = "0.3"
 LinearAlgebra = "1"
-MadNLP = "0.8"
+MadNLP = "0.8, 0.9"
 MadNLPMumps = "0.5"
 Optimization = "5"
 OptimizationMOI = "1"
