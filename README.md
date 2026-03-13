@@ -91,61 +91,6 @@ sail = SolarSail(100.0, 1000.0, 0.9)
 a_c = characteristic_acceleration(sail)  # [m/s²]
 ```
 
-## API Reference
-
-### Types
-
-| Type | Description |
-|------|-------------|
-| `Spacecraft(dry_mass, wet_mass, thrust, isp)` | Constant thrust propulsion |
-| `SEPSpacecraft(dry_mass, wet_mass, thrust_ref, isp, r_ref)` | Solar electric propulsion |
-| `SolarSail(dry_mass, area, reflectivity, r_ref)` | Solar radiation pressure |
-| `SimsFlanaganOptions` | Solver configuration |
-| `SimsFlanaganProblem` | Problem definition |
-| `SimsFlanaganSolution` | Optimization result |
-
-### Initial Guess Types
-
-| Type | Description |
-|------|-------------|
-| `LambertGuess()` | Lambert arc-based initialization |
-| `ZeroGuess()` | Zero throttles |
-| `RandomGuess(seed)` | Random throttles |
-| `ConstantGuess(direction, magnitude)` | Uniform direction |
-| `RadialGuess(magnitude)` | Radial direction |
-
-### Core Functions
-
-| Function | Description |
-|----------|-------------|
-| `simsflanagan_problem(r0, v0, rf, vf, tof, μ, spacecraft; kwargs...)` | Create a problem |
-| `solve(problem; kwargs...)` | Solve the problem (SciMLBase) |
-| `simsflanagan_solve(problem; kwargs...)` | Legacy solver interface |
-| `remake(problem; kwargs...)` | Create modified problem |
-| `mass(spacecraft)` | Get total initial mass |
-| `exhaust_velocity(spacecraft)` | Get exhaust velocity [m/s] |
-| `characteristic_acceleration(sail)` | Get solar sail characteristic acceleration [m/s²] |
-
-### Propagation Functions
-
-| Function | Description |
-|----------|-------------|
-| `kepler_propagate(r0, v0, Δt, μ)` | Universal Kepler propagation |
-| `propagate_segment(r, v, m, throttle, Δt, μ, sc)` | Propagate single segment |
-| `propagate_leg(r0, v0, m0, throttles, Δt, μ, sc)` | Propagate multiple segments |
-| `compute_mismatch(problem, throttles)` | Compute match point mismatch |
-| `compute_total_Δv(throttles, Δt, spacecraft)` | Compute total ΔV |
-
-### Solution Accessors
-
-| Function | Description |
-|----------|-------------|
-| `position_mismatch(sol)` | Position mismatch at match point [km] |
-| `velocity_mismatch(sol)` | Velocity mismatch at match point [km/s] |
-| `mass_mismatch(sol)` | Mass mismatch at match point [kg] |
-| `position_mismatch_norm(sol)` | ‖Δr‖ [km] |
-| `velocity_mismatch_norm(sol)` | ‖Δv‖ [km/s] |
-
 ### Problem Options
 
 ```julia
@@ -170,32 +115,7 @@ sol = solve(prob;
 )
 ```
 
-## Examples
-
-### LEO Orbit Raising
-
-```julia
-using SimsFlanagan
-
-μ = 398600.4418  # Earth gravitational parameter
-
-# Circular orbit radii
-r1, r2 = 7000.0, 7500.0
-v1, v2 = sqrt(μ / r1), sqrt(μ / r2)
-
-r0 = [r1, 0.0, 0.0]
-v0 = [0.0, v1, 0.0]
-rf = [r2, 0.0, 0.0]
-vf = [0.0, v2, 0.0]
-tof = 86400.0 * 2  # 2 days
-
-sc = Spacecraft(500.0, 500.0, 0.5, 3000.0)
-prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=10)
-sol = solve(prob)
-
-println("ΔV: $(sol.Δv_total) km/s")
-println("Converged: $(sol.converged)")
-```
+## Example
 
 ### Heliocentric SEP Transfer
 
@@ -222,57 +142,6 @@ prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ_sun, sep;
 )
 sol = solve(prob; initial_guess_strategy=LambertGuess())
 ```
-
-### Solar Sail Trajectory
-
-```julia
-using SimsFlanagan
-
-μ_sun = 1.32712440018e11
-r_1AU = 1.495978707e8
-
-# Lightweight solar sail: 50 kg, 2000 m² sail
-sail = SolarSail(50.0, 2000.0, 0.9)
-
-# Characteristic acceleration
-a_c = characteristic_acceleration(sail)
-println("Characteristic acceleration: $(a_c * 1000) mm/s²")
-
-r0 = [r_1AU, 0.0, 0.0]
-v0 = [0.0, 29.78, 0.0]
-rf = [r_1AU * 0.7, 0.0, 0.0]  # Toward inner solar system
-vf = [0.0, 35.0, 0.0]
-tof = 86400.0 * 365            # 1 year
-
-prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ_sun, sail; n_segments = 30)
-# Use radial guess for solar sails (Lambert doesn't apply)
-sol = solve(prob; initial_guess_strategy=RadialGuess())
-```
-
-## Utility Functions
-
-### AD-Safe Norm
-
-For use in optimization with automatic differentiation:
-
-```julia
-using SimsFlanagan: safe_norm
-
-x = [0.0, 0.0, 0.0]
-n = safe_norm(x)  # Returns 0.0 with well-defined gradient
-```
-
-Standard `norm(x)` has undefined gradient at x=0, which can cause issues with ForwardDiff.
-
-## Dependencies
-
-- **Optimization.jl**: Unified optimization interface
-- **MadNLP**: Interior-point nonlinear optimizer
-- **ForwardDiff**: Automatic differentiation
-- **Lambert.jl**: Lambert problem solver for initial guesses
-- **AstroCoords.jl**: Astrodynamics utilities
-- **StaticArrays.jl**: Fast fixed-size arrays
-- **SciMLBase.jl**: SciML ecosystem interface
 
 ## References
 
