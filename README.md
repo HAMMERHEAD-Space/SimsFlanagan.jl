@@ -11,15 +11,6 @@ A Julia package for low-thrust trajectory optimization using the Sims-Flanagan t
 
 The Sims-Flanagan method discretizes a low-thrust trajectory into segments, applying impulsive ΔV at segment midpoints to approximate continuous thrust. The trajectory is propagated forward from the initial state and backward from the final state, meeting at a match point where continuity is enforced.
 
-### Key Features
-
-- **Multiple propulsion models**: Constant thrust, SEP, and solar sails
-- **SciML interface**: Compatible with `solve()` and `remake()` patterns
-- **Automatic differentiation**: Uses ForwardDiff for gradient-based optimization
-- **Interior-point optimization**: MadNLP solver with MUMPS linear solver
-- **Sundman transformation**: Adaptive segment sizing based on orbital distance
-- **Lambert-based initialization**: Smart initial guesses for faster convergence
-
 ## Installation
 
 ```julia
@@ -99,80 +90,6 @@ sail = SolarSail(100.0, 1000.0, 0.9)
 # Characteristic acceleration at 1 AU:
 a_c = characteristic_acceleration(sail)  # [m/s²]
 ```
-
-For solar sails:
-- Throttle magnitude represents sail efficiency (0-1), related to cone angle α as cos²(α)
-- Throttle direction is the thrust direction
-- Mass is constant throughout the trajectory
-- Acceleration scales as `(r_ref/r)²` with solar distance
-
-## SciMLBase Interface
-
-SimsFlanagan.jl follows SciML conventions for problem/solution handling:
-
-### solve
-
-```julia
-sol = solve(prob)  # Solve with defaults
-sol = solve(prob; max_iter=500, tol=1e-8)  # Custom options
-```
-
-### remake
-
-Create a modified problem without rebuilding from scratch:
-
-```julia
-prob2 = remake(prob; tof=prob.tof * 1.1)  # 10% longer transfer
-prob3 = remake(prob; spacecraft=new_spacecraft)
-```
-
-## Initial Guess Strategies
-
-Control how the optimizer starts using `initial_guess_strategy`:
-
-| Strategy | Description | Best For |
-|----------|-------------|----------|
-| `RandomGuess(seed=1234)` | Random throttle directions and magnitudes | Default, general use |
-| `LambertGuess()` | Uses Lambert arc solution | Ballistic-like transfers |
-| `ZeroGuess()` | All throttles = 0 | Simple problems |
-| `ConstantGuess(direction, magnitude)` | Uniform thrust direction | Known transfer geometry |
-| `RadialGuess(magnitude)` | Radial (Sun-pointing) direction | Solar sails |
-
-```julia
-# Use Lambert-based initialization
-sol = solve(prob; initial_guess_strategy=LambertGuess())
-
-# Use random with specific seed
-sol = solve(prob; initial_guess_strategy=RandomGuess(seed=42))
-
-# Custom constant direction
-sol = solve(prob; initial_guess_strategy=ConstantGuess(direction=[1,0,0], magnitude=0.7))
-```
-
-You can also provide throttles directly:
-
-```julia
-my_throttles = [SVector{3}(0.5, 0.0, 0.0) for _ in 1:n_segments]
-sol = solve(prob; initial_guess=my_throttles)
-```
-
-## Sundman Transformation
-
-Enable adaptive segment durations based on distance from the central body:
-
-```julia
-prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, spacecraft;
-    n_segments = 20,
-    sundman_c = 1.0,  # Classic Sundman: dt ∝ r
-)
-```
-
-Sundman exponent options:
-- `0.0` (default): Equal time segments
-- `1.0`: Classic Sundman (dt ∝ r), more resolution near central body
-- `1.5`: Related to eccentric anomaly
-
-This is particularly useful for SEP where thrust decreases with distance, requiring more time for maneuvers at outer regions.
 
 ## API Reference
 
@@ -370,3 +287,6 @@ Standard `norm(x)` has undefined gradient at x=0, which can cause issues with Fo
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## Acknowledgements
+This implementation is based on the fantastic ESA toolbox [Pykep](https://esa.github.io/pykep/)
