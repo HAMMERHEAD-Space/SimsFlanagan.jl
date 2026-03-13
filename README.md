@@ -61,4 +61,4 @@ sol = solve(prob; initial_guess_strategy=LambertGuess())
 MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgements
-This implementation is based on the fantastic ESA toolbox [Pykep](https://esa.github.io/pykep/)
+This implementation is a port of the Sims-Flanagan algorithm from the fantastic ESA toolbox [Pykep](https://esa.github.io/pykep/).
