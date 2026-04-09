@@ -1,7 +1,7 @@
 name = "SimsFlanagan"
 uuid = "52d4a9ed-7cfd-4ff0-8464-9a96327c0b1a"
-authors = ["Jordan Murphy <jmurphy6895@gmail.com> and contributors"]
 version = "0.1.0"
+authors = ["Jordan Murphy <jmurphy6895@gmail.com> and contributors"]
 
 [deps]
 AstroCoords = "27fb9038-6a9d-4e07-8d5d-d0805b53c4cb"
@@ -28,7 +28,7 @@ Optimization = "5"
 OptimizationMOI = "1"
 OptimizationMadNLP = "1"
 Random = "1"
-SciMLBase = "2"
+SciMLBase = "2, 3"
 StaticArrays = "1"
 julia = "1.10, 1.11"
 
