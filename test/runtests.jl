@@ -8,8 +8,10 @@ using AllocCheck
 using Aqua
 using JET
 
-using SciMLBase
-using OptimizationMOI
+using SciMLBase: SciMLBase
+using OptimizationMOI: OptimizationMOI
+using OptimizationBase: OptimizationBase
+using SymbolicUtils: SymbolicUtils
 
 @testset "SimsFlanagan.jl Tests" begin
     include("test_types.jl")
@@ -101,17 +103,15 @@ end
 end
 
 @testset "JET Testing" begin
+    ignored = if VERSION >= v"1.12"
+        (SciMLBase, OptimizationBase, OptimizationMOI, SymbolicUtils)
+    else
+        ()
+    end
     rep = JET.test_package(
         SimsFlanagan;
         toplevel_logger=nothing,
         target_modules=(@__MODULE__,),
-        ignored_modules=(
-            # SciMLBase.numargs uses runtime reflection on closures that JET
-            # cannot statically resolve (FieldError on closure captures).
-            SciMLBase,
-            # OptimizationMOI.generate_exprs triggers SymbolicUtils hashconsing
-            # and code generation paths with known JET false positives.
-            OptimizationMOI,
-        ),
+        ignored_modules=ignored,
     )
 end
