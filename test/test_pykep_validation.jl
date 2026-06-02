@@ -180,4 +180,3 @@ km and km/s. Values are converted as needed.
         @test MU ≈ mass(sc)
     end
 end
-

@@ -39,4 +39,3 @@ end
     end
     return sqrt(s)
 end
-

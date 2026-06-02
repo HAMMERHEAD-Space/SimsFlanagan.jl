@@ -69,4 +69,3 @@
         @test mismatch isa SVector{7}
     end
 end
-

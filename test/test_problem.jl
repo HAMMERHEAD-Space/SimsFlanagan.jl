@@ -140,4 +140,3 @@
         @test length(throttles_radial) == 6
     end
 end
-
