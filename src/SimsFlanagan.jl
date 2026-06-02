@@ -17,7 +17,6 @@ import Optimization
 using OptimizationMOI
 using OptimizationMadNLP
 import MadNLP
-import MadNLPMumps
 using ForwardDiff
 
 include("utils.jl")

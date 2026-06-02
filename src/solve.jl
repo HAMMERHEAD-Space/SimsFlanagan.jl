@@ -290,8 +290,8 @@ function _solve_internal(
         ucons = ucons,
     )
 
-    # Create MadNLP optimizer
-    optimizer = MadNLP.Optimizer(; linear_solver = MadNLPMumps.MumpsSolver)
+    # Create MadNLP optimizer (uses default linear solver)
+    optimizer = MadNLP.Optimizer()
 
     # Solve
     opt_sol = Optimization.solve(
