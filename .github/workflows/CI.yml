@@ -46,3 +46,24 @@ jobs:
       - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+  diff-test:
+    name: Differentiability (ForwardDiff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+        env:
+          cache-name: cache-artifacts-diff
+        with:
+          path: ~/.julia/artifacts
+          key: Linux-diff-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            Linux-diff-${{ env.cache-name }}-
+            Linux-diff-
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        env:
+          SIMSFLANAGAN_TEST_DIFF: "ForwardDiff"
