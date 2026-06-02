@@ -100,7 +100,7 @@ function compute_sundman_segments(
     r_end::AbstractVector,
     tof_leg::Number,
     n_segments::Int;
-    c::Number = 1.0,
+    c::Number=1.0,
 )
     if c == 0 || n_segments == 0
         # No Sundman transformation: equal time segments
@@ -117,7 +117,7 @@ function compute_sundman_segments(
     # This implements dt = r^c ds, where ds is uniform
     T = typeof(tof_leg)
     weights = Vector{T}(undef, n_segments)
-    for i = 1:n_segments
+    for i in 1:n_segments
         # Midpoint of segment i in normalized leg [0, 1]
         s_mid = (i - T(0.5)) / n_segments
         # Linear interpolation of radius magnitude
@@ -167,7 +167,7 @@ function compute_sundman_leg_times(
     tof::Number,
     n_fwd::Int,
     n_bwd::Int;
-    c::Number = 1.0,
+    c::Number=1.0,
 )
     n_total = n_fwd + n_bwd
 
@@ -185,7 +185,7 @@ function compute_sundman_leg_times(
 
     # Compute weights for all segments
     all_weights = Vector{T}(undef, n_total)
-    for i = 1:n_total
+    for i in 1:n_total
         # Midpoint of segment i in normalized trajectory [0, 1]
         s_mid = (i - T(0.5)) / n_total
         # Linear interpolation of radius magnitude
@@ -199,7 +199,7 @@ function compute_sundman_leg_times(
 
     # Split into forward and backward legs
     Δt_fwd = all_Δt[1:n_fwd]
-    Δt_bwd = all_Δt[(n_fwd+1):end]
+    Δt_bwd = all_Δt[(n_fwd + 1):end]
 
     return Δt_fwd, Δt_bwd
 end
@@ -233,10 +233,9 @@ function kepler_propagate(
     v0::AbstractVector{VT},
     Δt::TT,
     μ::MT;
-    tol::Float64 = 1e-12,
-    maxiter::Int = 50,
+    tol::Float64=1e-12,
+    maxiter::Int=50,
 ) where {RT<:Number,VT<:Number,TT<:Number,MT<:Number}
-
     T = promote_type(RT, VT, TT, MT)
 
     # Initial state quantities
@@ -251,7 +250,7 @@ function kepler_propagate(
     χ = sqrt(μ) * abs(α) * Δt  # Good initial guess
 
     # Newton-Raphson iteration to solve universal Kepler's equation
-    for _ = 1:maxiter
+    for _ in 1:maxiter
         χ2 = χ * χ
         z = α * χ2
 
@@ -333,9 +332,8 @@ function propagate_segment(
     Δt::DTT,
     μ::MuT,
     spacecraft::AbstractSpacecraft;
-    forward::Val{direction} = Val(true),
+    forward::Val{direction}=Val(true),
 ) where {RT<:Number,VT<:Number,MT<:Number,ThT<:Number,DTT<:Number,MuT<:Number,direction}
-
     T = promote_type(RT, VT, MT, ThT, DTT, MuT)
 
     half_Δt = Δt / 2
@@ -432,21 +430,21 @@ function propagate_leg(
     Δt_segments::Union{DTT,AbstractVector{DTT}},
     μ::MuT,
     spacecraft::AbstractSpacecraft;
-    forward::Val{direction} = Val(true),
+    forward::Val{direction}=Val(true),
 ) where {RT<:Number,VT<:Number,MT<:Number,ThT<:Number,DTT<:Number,MuT<:Number,direction}
-
     T = promote_type(RT, VT, MT, ThT, DTT, MuT)
 
     r, v, m = r0, v0, m0
     total_Δv = zero(T)
 
     n_seg = length(throttles)
-    for i = 1:n_seg
+    for i in 1:n_seg
         # Get segment duration (scalar or from array)
         Δt = Δt_segments isa Number ? Δt_segments : Δt_segments[i]
 
-        r, v, m, Δv =
-            propagate_segment(r, v, m, throttles[i], Δt, μ, spacecraft; forward = forward)
+        r, v, m, Δv = propagate_segment(
+            r, v, m, throttles[i], Δt, μ, spacecraft; forward=forward
+        )
         total_Δv += Δv
     end
 
@@ -472,10 +470,8 @@ adaptive segment durations based on distance from central body.
 - `mismatch::SVector{7}`: Mismatch vector [Δr; Δv; Δm] at match point
 """
 function compute_mismatch(
-    problem::SimsFlanaganProblem{T},
-    throttles::AbstractVector{<:AbstractVector},
+    problem::SimsFlanaganProblem{T}, throttles::AbstractVector{<:AbstractVector}
 ) where {T<:Number}
-
     n_seg = problem.options.n_segments
     n_fwd = problem.options.n_fwd
     n_bwd = n_seg - n_fwd
@@ -484,12 +480,7 @@ function compute_mismatch(
     # Compute segment durations for each leg (with optional Sundman transformation)
     # This allocates TOF between legs and computes segment times within each leg
     Δt_fwd, Δt_bwd = compute_sundman_leg_times(
-        problem.r0,
-        problem.rf,
-        problem.tof,
-        n_fwd,
-        n_bwd;
-        c = sundman_c,
+        problem.r0, problem.rf, problem.tof, n_fwd, n_bwd; c=sundman_c
     )
 
     # Forward propagation
@@ -501,12 +492,12 @@ function compute_mismatch(
         throttles_fwd,
         Δt_fwd,
         problem.μ,
-        problem.spacecraft,
-        forward = Val(true),
+        problem.spacecraft;
+        forward=Val(true),
     )
 
     # Backward propagation
-    throttles_bwd = throttles[(n_fwd+1):end]
+    throttles_bwd = throttles[(n_fwd + 1):end]
 
     # Estimate final mass using all segment times
     Δt_all = vcat(Δt_fwd, Δt_bwd)
@@ -520,8 +511,8 @@ function compute_mismatch(
         reverse(throttles_bwd),
         reverse(Δt_bwd),
         problem.μ,
-        problem.spacecraft,
-        forward = Val(false),
+        problem.spacecraft;
+        forward=Val(false),
     )
 
     # Compute mismatch
@@ -550,7 +541,7 @@ For solar sails, mass is constant.
 function estimate_final_mass(
     problem::SimsFlanaganProblem,
     throttles::AbstractVector,
-    Δt_segments::Union{Nothing,AbstractVector} = nothing,
+    Δt_segments::Union{Nothing,AbstractVector}=nothing,
 )
     spacecraft = problem.spacecraft
 
@@ -602,9 +593,8 @@ function compute_total_Δv(
     throttles::AbstractVector{<:AbstractVector{ThT}},
     Δt_segments::Union{DT,AbstractVector{DT}},
     spacecraft::AbstractSpacecraft;
-    r_ref::AbstractVector = SVector{3,Float64}(1.495978707e8, 0.0, 0.0),  # Reference position for thrust calc
+    r_ref::AbstractVector=SVector{3,Float64}(1.495978707e8, 0.0, 0.0),  # Reference position for thrust calc
 ) where {ThT<:Number,DT<:Number}
-
     T = promote_type(ThT, DT, typeof(mass(spacecraft)))
     total_Δv = zero(T)
     m = T(mass(spacecraft))
@@ -646,7 +636,6 @@ function compute_total_Δv(
     Δt_segments::Union{DT,AbstractVector{DT}},
     spacecraft::Spacecraft,
 ) where {ThT<:Number,DT<:Number}
-
     T = promote_type(ThT, DT, typeof(mass(spacecraft)))
     total_Δv = zero(T)
     m = mass(spacecraft)

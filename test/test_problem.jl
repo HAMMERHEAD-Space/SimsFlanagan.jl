@@ -1,5 +1,4 @@
 @testset "Problem Construction" begin
-
     @testset "SimsFlanaganProblem construction" begin
         # Define a simple Earth orbit raising problem
         μ = 398600.4418  # km³/s²
@@ -35,7 +34,7 @@
         tof = 86400.0
 
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments = 4)
+        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=4)
 
         # Test that problem inherits from AbstractSciMLProblem
         @test prob isa SciMLBase.AbstractSciMLProblem
@@ -51,10 +50,10 @@
         tof = 86400.0
 
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments = 4)
+        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=4)
 
         # Test remake with single field
-        prob_new_tof = remake(prob; tof = tof * 2)
+        prob_new_tof = remake(prob; tof=tof * 2)
         @test prob_new_tof.tof == tof * 2
         @test prob_new_tof.r0 == prob.r0
         @test prob_new_tof.v0 == prob.v0
@@ -65,20 +64,20 @@
         # Test remake with boundary conditions
         new_r0 = [8000.0, 0.0, 0.0]
         new_rf = [9000.0, 0.0, 0.0]
-        prob_new_bc = remake(prob; r0 = new_r0, rf = new_rf)
+        prob_new_bc = remake(prob; r0=new_r0, rf=new_rf)
         @test prob_new_bc.r0 == new_r0
         @test prob_new_bc.rf == new_rf
         @test prob_new_bc.tof == prob.tof
 
         # Test remake with new spacecraft
         sc2 = Spacecraft(100.0, 400.0, 1.0, 2000.0)
-        prob_new_sc = remake(prob; spacecraft = sc2)
+        prob_new_sc = remake(prob; spacecraft=sc2)
         @test prob_new_sc.spacecraft === sc2
         @test prob_new_sc.tof == prob.tof
 
         # Test remake with new options
-        new_opts = SimsFlanaganOptions(n_segments = 8)
-        prob_new_opts = remake(prob; options = new_opts)
+        new_opts = SimsFlanaganOptions(n_segments=8)
+        prob_new_opts = remake(prob; options=new_opts)
         @test prob_new_opts.options.n_segments == 8
         @test prob_new_opts.tof == prob.tof
 
@@ -98,7 +97,7 @@
 
         # Spacecraft(dry_mass, wet_mass, thrust, isp)
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments = 10)
+        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=10)
 
         throttles = SimsFlanagan.initial_guess_lambert(prob)
 
@@ -115,7 +114,7 @@
         tof = 86400.0 * 5
 
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments = 6)
+        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=6)
 
         # Test ZeroGuess
         throttles_zero = SimsFlanagan.generate_initial_guess(prob, ZeroGuess())
@@ -129,15 +128,15 @@
 
         # Test ConstantGuess
         throttles_const = SimsFlanagan.generate_initial_guess(
-            prob,
-            ConstantGuess(direction = [1, 0, 0], magnitude = 0.5),
+            prob, ConstantGuess(direction=[1, 0, 0], magnitude=0.5)
         )
         @test length(throttles_const) == 6
         @test all(t -> norm(t) ≈ 0.5, throttles_const)
 
         # Test RadialGuess
-        throttles_radial =
-            SimsFlanagan.generate_initial_guess(prob, RadialGuess(magnitude = 0.3))
+        throttles_radial = SimsFlanagan.generate_initial_guess(
+            prob, RadialGuess(magnitude=0.3)
+        )
         @test length(throttles_radial) == 6
     end
 end

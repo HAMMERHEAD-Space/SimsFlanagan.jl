@@ -16,7 +16,7 @@ function checked_allocs(f, types)
     _SKIP_ALLOCCHECK && return ()
     allocs = check_allocs(f, types)
     if !isempty(allocs)
-        printstyled(stdout, "\n[ALLOC] "; color = :red, bold = true)
+        printstyled(stdout, "\n[ALLOC] "; color=:red, bold=true)
         println(stdout, f, " with ", types, " => ", length(allocs), " allocation(s)")
         for (i, a) in enumerate(allocs)
             println(stdout, "  ──────── allocation ", i, " ────────")
@@ -43,7 +43,6 @@ const sep_perf = SEPSpacecraft(200.0, 800.0, 0.5, 3000.0, 1.495978707e8)
 const sail_perf = SolarSail(200.0, 100.0, 0.9, 1.495978707e8)
 
 @testset "Non-Allocating Performance Tests" begin
-
     @testset "Stumpff Functions — Zero Allocation" begin
         @testset "stumpff_c2" begin
             @test length(checked_allocs(SimsFlanagan.stumpff_c2, (Float64,))) == 0
@@ -61,22 +60,19 @@ const sail_perf = SolarSail(200.0, 100.0, 0.9, 1.495978707e8)
     @testset "Spacecraft Type Construction — Zero Allocation" begin
         @testset "Spacecraft" begin
             @test length(
-                checked_allocs(Spacecraft, (Float64, Float64, Float64, Float64)),
+                checked_allocs(Spacecraft, (Float64, Float64, Float64, Float64))
             ) == 0
         end
 
         @testset "SEPSpacecraft" begin
             @test length(
-                checked_allocs(
-                    SEPSpacecraft,
-                    (Float64, Float64, Float64, Float64, Float64),
-                ),
+                checked_allocs(SEPSpacecraft, (Float64, Float64, Float64, Float64, Float64))
             ) == 0
         end
 
         @testset "SolarSail" begin
             @test length(checked_allocs(SolarSail, (Float64, Float64, Float64, Float64))) ==
-                  0
+                0
         end
     end
 
@@ -126,22 +122,19 @@ const sail_perf = SolarSail(200.0, 100.0, 0.9, 1.495978707e8)
     @testset "Mass Flow Computation — Zero Allocation" begin
         @testset "Spacecraft" begin
             @test length(
-                checked_allocs(SimsFlanagan.compute_mass_flow, (typeof(sc_perf), Float64)),
+                checked_allocs(SimsFlanagan.compute_mass_flow, (typeof(sc_perf), Float64))
             ) == 0
         end
 
         @testset "SEPSpacecraft" begin
             @test length(
-                checked_allocs(SimsFlanagan.compute_mass_flow, (typeof(sep_perf), Float64)),
+                checked_allocs(SimsFlanagan.compute_mass_flow, (typeof(sep_perf), Float64))
             ) == 0
         end
 
         @testset "SolarSail" begin
             @test length(
-                checked_allocs(
-                    SimsFlanagan.compute_mass_flow,
-                    (typeof(sail_perf), Float64),
-                ),
+                checked_allocs(SimsFlanagan.compute_mass_flow, (typeof(sail_perf), Float64))
             ) == 0
         end
     end

@@ -1,6 +1,9 @@
 name: Differentiability
 on:
+  pull_request:
   push:
+    branches:
+      - master
     tags: ['*']
   workflow_dispatch:
     inputs:
@@ -32,4 +35,4 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
-          SIMSFLANAGAN_TEST_DIFF: ${{ github.event.inputs.backends || 'all' }}
+          SIMSFLANAGAN_TEST_DIFF: ${{ github.event.inputs.backends || (github.event_name == 'pull_request' && 'ForwardDiff') || 'all' }}

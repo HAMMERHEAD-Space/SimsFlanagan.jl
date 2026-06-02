@@ -23,8 +23,20 @@ Properties:
 - Gradient is continuous everywhere
 - C∞ smooth (infinitely differentiable)
 """
-@inline function safe_norm(x::AbstractVector{T}, δ::T = T(1e-8)) where {T}
+@inline function safe_norm(x::AbstractVector{T}, δ::T=T(1e-8)) where {T}
     sq = dot(x, x)
     return sqrt(sq + δ^2) - δ
+end
+
+# Euclidean (2-) norm computed with an explicit reduction. This intentionally
+# avoids `LinearAlgebra.norm`, whose `StridedVector{<:Union{...}}` methods route
+# through `ReinterpretArray` padding code that triggers a JET false positive on
+# Julia 1.12 when analyzed against generic `AbstractVector{<:Number}` signatures.
+@inline function _euclidean_norm(v::AbstractVector{T}) where {T<:Number}
+    s = abs2(zero(T))
+    @inbounds for i in eachindex(v)
+        s += abs2(v[i])
+    end
+    return sqrt(s)
 end
 

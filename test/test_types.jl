@@ -1,5 +1,4 @@
 @testset "Types" begin
-
     @testset "Spacecraft (constant thrust)" begin
         # Spacecraft(dry_mass, wet_mass, thrust, isp)
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)  # 200 kg dry, 800 kg propellant
@@ -116,16 +115,16 @@
         @test opts.verbosity == 1
 
         # Custom options
-        opts2 = SimsFlanaganOptions(n_segments = 20, n_fwd = 8, tol = 1e-10)
+        opts2 = SimsFlanaganOptions(n_segments=20, n_fwd=8, tol=1e-10)
         @test opts2.n_segments == 20
         @test opts2.n_fwd == 8
         @test opts2.tol == 1e-10
 
         # Validation
-        @test_throws ArgumentError SimsFlanaganOptions(n_segments = 0)
-        @test_throws ArgumentError SimsFlanaganOptions(n_segments = 10, n_fwd = 0)
-        @test_throws ArgumentError SimsFlanaganOptions(n_segments = 10, n_fwd = 11)
-        @test_throws ArgumentError SimsFlanaganOptions(tol = -1.0)
+        @test_throws ArgumentError SimsFlanaganOptions(n_segments=0)
+        @test_throws ArgumentError SimsFlanaganOptions(n_segments=10, n_fwd=0)
+        @test_throws ArgumentError SimsFlanaganOptions(n_segments=10, n_fwd=11)
+        @test_throws ArgumentError SimsFlanaganOptions(tol=-1.0)
     end
 
     @testset "Vector conversion utilities" begin
@@ -137,5 +136,4 @@
         throttles_back = SimsFlanagan.vector_to_throttles(x, 2)
         @test throttles_back == throttles
     end
-
 end

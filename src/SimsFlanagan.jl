@@ -10,13 +10,13 @@ import SciMLBase: solve, remake
 
 # Astrodynamics
 using AstroCoords
-import Lambert  # import to avoid solve conflict
+using Lambert: Lambert  # import to avoid solve conflict
 
 # Optimization - import to avoid solve conflict  
-import Optimization
+using Optimization: Optimization
 using OptimizationMOI
 using OptimizationMadNLP
-import MadNLP
+using MadNLP: MadNLP
 using ForwardDiff
 
 include("utils.jl")

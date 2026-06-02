@@ -49,7 +49,7 @@ if _DIFF_ENV ∉ ("false", "")
             (
                 "Enzyme",
                 DifferentiationInterface.AutoEnzyme(;
-                    mode = Enzyme.set_runtime_activity(Enzyme.Forward),
+                    mode=Enzyme.set_runtime_activity(Enzyme.Forward)
                 ),
             ),
         )
@@ -58,7 +58,7 @@ if _DIFF_ENV ∉ ("false", "")
         using Mooncake
         push!(
             _backend_list,
-            ("Mooncake", DifferentiationInterface.AutoMooncake(; config = nothing)),
+            ("Mooncake", DifferentiationInterface.AutoMooncake(; config=nothing)),
         )
     end
     if _need("PolyesterForwardDiff")
@@ -93,16 +93,22 @@ end
 
 @testset "Aqua Tests" begin
     Aqua.test_all(
-        SimsFlanagan;
-        ambiguities = (recursive = false),
-        deps_compat = (check_extras = false),
+        SimsFlanagan; ambiguities=(recursive = false), deps_compat=(check_extras = false)
     )
 end
 
 @testset "JET Testing" begin
     rep = JET.test_package(
         SimsFlanagan;
-        toplevel_logger = nothing,
-        target_modules = (@__MODULE__,),
+        toplevel_logger=nothing,
+        target_modules=(@__MODULE__,),
+        ignored_modules=(
+            # SciMLBase.numargs uses runtime reflection on closures that JET
+            # cannot statically resolve (FieldError on closure captures).
+            SciMLBase,
+            # OptimizationMOI.generate_exprs triggers SymbolicUtils hashconsing
+            # and code generation paths with known JET false positives.
+            OptimizationMOI,
+        ),
     )
 end

@@ -21,14 +21,7 @@ const _SF_SPACECRAFT = Spacecraft(200.0, 800.0, 0.5, 3000.0)
 
 # Create test problem
 const _SF_TEST_PROB = simsflanagan_problem(
-    _SF_R0,
-    _SF_V0,
-    _SF_RF,
-    _SF_VF,
-    _SF_TOF,
-    _SF_MU,
-    _SF_SPACECRAFT;
-    n_segments = 4,
+    _SF_R0, _SF_V0, _SF_RF, _SF_VF, _SF_TOF, _SF_MU, _SF_SPACECRAFT; n_segments=4
 )
 
 # Test throttle vectors
@@ -40,8 +33,9 @@ const _SF_THROTTLES = [
 ]
 
 # Initial throttle guess (flattened)
-const _SF_THROTTLE_X0 =
-    Vector(vcat([0.1, 0.2, 0.3, 0.2, 0.1, 0.0, 0.0, 0.1, 0.2, 0.3, 0.2, 0.1]...))
+const _SF_THROTTLE_X0 = Vector(
+    vcat([0.1, 0.2, 0.3, 0.2, 0.1, 0.0, 0.0, 0.1, 0.2, 0.3, 0.2, 0.1]...)
+)
 
 # Segment times for compute_total_Δv
 const _SF_DT_SEGMENTS = fill(_SF_TOF / 4, 4)
@@ -51,7 +45,10 @@ Map input vector x = [throttle1..., throttle2..., ..., throttleN...] to mismatch
 """
 function _mismatch_map(x::AbstractVector{T}, prob) where {T}
     n_seg = prob.options.n_segments
-    throttles = [SVector{3,T}(x[3*(i-1)+1], x[3*(i-1)+2], x[3*(i-1)+3]) for i = 1:n_seg]
+    throttles = [
+        SVector{3,T}(x[3 * (i - 1) + 1], x[3 * (i - 1) + 2], x[3 * (i - 1) + 3]) for
+        i in 1:n_seg
+    ]
     mismatch = compute_mismatch(prob, throttles)
     return Vector(mismatch)
 end
@@ -61,7 +58,10 @@ Map input vector x = [throttle1..., throttle2..., ..., throttleN...] to scaled m
 """
 function _scaled_mismatch_map(x::AbstractVector{T}, prob) where {T}
     n_seg = prob.options.n_segments
-    throttles = [SVector{3,T}(x[3*(i-1)+1], x[3*(i-1)+2], x[3*(i-1)+3]) for i = 1:n_seg]
+    throttles = [
+        SVector{3,T}(x[3 * (i - 1) + 1], x[3 * (i - 1) + 2], x[3 * (i - 1) + 3]) for
+        i in 1:n_seg
+    ]
     mismatch = scaled_mismatch_constraints(prob, throttles)
     return Vector(mismatch)
 end
@@ -71,7 +71,10 @@ Map input vector x = [throttle1..., throttle2..., ..., throttleN...] to total Δ
 """
 function _total_dv_map(x::AbstractVector{T}, prob, Δt_segments) where {T}
     n_seg = prob.options.n_segments
-    throttles = [SVector{3,T}(x[3*(i-1)+1], x[3*(i-1)+2], x[3*(i-1)+3]) for i = 1:n_seg]
+    throttles = [
+        SVector{3,T}(x[3 * (i - 1) + 1], x[3 * (i - 1) + 2], x[3 * (i - 1) + 3]) for
+        i in 1:n_seg
+    ]
     Δv = compute_total_Δv(throttles, Δt_segments, prob.spacecraft)
     return [Δv]
 end
@@ -81,7 +84,10 @@ Map input vector x = [throttle1..., throttle2..., ..., throttleN...] to throttle
 """
 function _throttle_mag_map(x::AbstractVector{T}) where {T}
     n_seg = length(x) ÷ 3
-    throttles = [SVector{3,T}(x[3*(i-1)+1], x[3*(i-1)+2], x[3*(i-1)+3]) for i = 1:n_seg]
+    throttles = [
+        SVector{3,T}(x[3 * (i - 1) + 1], x[3 * (i - 1) + 2], x[3 * (i - 1) + 3]) for
+        i in 1:n_seg
+    ]
     return SimsFlanagan.throttle_magnitude_constraints(throttles)
 end
 
@@ -106,8 +112,9 @@ function _segment_map(x::AbstractVector{T}) where {T}
     throttle = SVector{3,T}(x[8], x[9], x[10])
     Δt = x[11]
 
-    rf, vf, mf, Δv =
-        SimsFlanagan.propagate_segment(r, v, m, throttle, Δt, T(_SF_MU), _SF_SPACECRAFT)
+    rf, vf, mf, Δv = SimsFlanagan.propagate_segment(
+        r, v, m, throttle, Δt, T(_SF_MU), _SF_SPACECRAFT
+    )
     return Vector([rf..., vf..., mf, Δv])
 end
 
@@ -152,9 +159,7 @@ end
     for (bname, backend) in _SF_BACKENDS
         @testset "$bname" begin
             J_ref = jacobian(
-                x -> _mismatch_map(x, _SF_TEST_PROB),
-                _SF_REF_BACKEND,
-                _SF_THROTTLE_X0,
+                x -> _mismatch_map(x, _SF_TEST_PROB), _SF_REF_BACKEND, _SF_THROTTLE_X0
             )
             J_ad = jacobian(x -> _mismatch_map(x, _SF_TEST_PROB), backend, _SF_THROTTLE_X0)
             @test J_ad ≈ J_ref rtol = 1e-4 atol = 1e-8
@@ -171,9 +176,7 @@ end
                 _SF_THROTTLE_X0,
             )
             J_ad = jacobian(
-                x -> _scaled_mismatch_map(x, _SF_TEST_PROB),
-                backend,
-                _SF_THROTTLE_X0,
+                x -> _scaled_mismatch_map(x, _SF_TEST_PROB), backend, _SF_THROTTLE_X0
             )
             @test J_ad ≈ J_ref rtol = 1e-4 atol = 1e-8
         end

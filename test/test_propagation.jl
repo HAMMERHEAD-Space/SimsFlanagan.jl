@@ -1,5 +1,4 @@
 @testset "Propagation" begin
-
     @testset "Kepler propagation" begin
         # Simple circular orbit test
         μ = 398600.4418
@@ -59,16 +58,15 @@
 
         # Spacecraft(dry_mass, wet_mass, thrust, isp)
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments = 4)
+        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=4)
 
         # Zero throttle guess
-        throttles = [SVector{3}(0.0, 0.0, 0.0) for _ = 1:4]
+        throttles = [SVector{3}(0.0, 0.0, 0.0) for _ in 1:4]
 
         mismatch = compute_mismatch(prob, throttles)
 
         @test length(mismatch) == 7  # 3 position + 3 velocity + 1 mass
         @test mismatch isa SVector{7}
     end
-
 end
 
