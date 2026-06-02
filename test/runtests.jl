@@ -8,6 +8,9 @@ using AllocCheck
 using Aqua
 using JET
 
+using SciMLBase
+using OptimizationMOI
+
 @testset "SimsFlanagan.jl Tests" begin
     include("test_types.jl")
     include("test_propagation.jl")
