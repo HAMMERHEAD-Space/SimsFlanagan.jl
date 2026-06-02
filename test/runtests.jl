@@ -8,11 +8,6 @@ using AllocCheck
 using Aqua
 using JET
 
-using SciMLBase: SciMLBase
-using OptimizationMOI: OptimizationMOI
-using OptimizationBase: OptimizationBase
-using SymbolicUtils: SymbolicUtils
-
 @testset "SimsFlanagan.jl Tests" begin
     include("test_types.jl")
     include("test_propagation.jl")
@@ -103,15 +98,11 @@ end
 end
 
 @testset "JET Testing" begin
-    ignored = if VERSION >= v"1.12"
-        (SciMLBase, OptimizationBase, OptimizationMOI, SymbolicUtils)
+    if VERSION >= v"1.12"
+        @info "Skipping JET on Julia 1.12+ (dependency false positives in SymbolicUtils/OptimizationMOI code generation)"
     else
-        ()
+        rep = JET.test_package(
+            SimsFlanagan; toplevel_logger=nothing, target_modules=(@__MODULE__,)
+        )
     end
-    rep = JET.test_package(
-        SimsFlanagan;
-        toplevel_logger=nothing,
-        target_modules=(@__MODULE__,),
-        ignored_modules=ignored,
-    )
 end
