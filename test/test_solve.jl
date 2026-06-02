@@ -16,19 +16,10 @@
 
         sc = Spacecraft(500.0, 500.0, 0.5, 3000.0)
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            μ,
-            sc;
-            n_segments = 10,
-            verbosity = 0,
-            tol = 1e-6,
+            r0, v0, rf, vf, tof, μ, sc; n_segments=10, verbosity=0, tol=1e-6
         )
 
-        sol = solve(prob; initial_guess_strategy = RandomGuess(seed = 42))
+        sol = solve(prob; initial_guess_strategy=RandomGuess(seed=42))
 
         @test sol isa SimsFlanaganSolution
         @test length(sol.throttles) == 10
@@ -51,15 +42,7 @@
 
         for n_seg in [4, 8]
             prob = simsflanagan_problem(
-                r0,
-                v0,
-                rf,
-                vf,
-                tof,
-                μ,
-                sc;
-                n_segments = n_seg,
-                verbosity = 0,
+                r0, v0, rf, vf, tof, μ, sc; n_segments=n_seg, verbosity=0
             )
 
             sol = solve(prob)
@@ -76,19 +59,10 @@
 
         sc = Spacecraft(990.0, 10.0, 0.001, 3000.0)
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            μ,
-            sc;
-            n_segments = 4,
-            verbosity = 0,
-            tol = 1e-6,
+            r0, v0, rf, vf, tof, μ, sc; n_segments=4, verbosity=0, tol=1e-6
         )
 
-        sol = solve(prob; max_iter = 100)
+        sol = solve(prob; max_iter=100)
 
         @test !sol.converged
         @test sol.retcode != ReturnCode.Success
@@ -102,23 +76,22 @@
         tof = 86400.0
 
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
-        prob =
-            simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments = 4, verbosity = 0)
+        prob = simsflanagan_problem(r0, v0, rf, vf, tof, μ, sc; n_segments=4, verbosity=0)
 
         sol1 = solve(prob)
         @test sol1 isa SimsFlanaganSolution
 
-        sol2 = solve(prob; max_iter = 50, tol = 1e-4)
+        sol2 = solve(prob; max_iter=50, tol=1e-4)
         @test sol2 isa SimsFlanaganSolution
 
-        prob2 = remake(prob; tof = prob.tof * 1.5)
+        prob2 = remake(prob; tof=prob.tof * 1.5)
         @test prob2.tof == prob.tof * 1.5
         @test prob2.r0 == prob.r0
 
-        sol_random = solve(prob; initial_guess_strategy = RandomGuess())
+        sol_random = solve(prob; initial_guess_strategy=RandomGuess())
         @test sol_random isa SimsFlanaganSolution
 
-        sol_zero = solve(prob; initial_guess_strategy = ZeroGuess())
+        sol_zero = solve(prob; initial_guess_strategy=ZeroGuess())
         @test sol_zero isa SimsFlanaganSolution
     end
 end

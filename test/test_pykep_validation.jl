@@ -69,8 +69,9 @@ km and km/s. Values are converted as needed.
 
         # Zero throttle should give same result as pure Kepler propagation
         throttle_zero = SVector{3}(0.0, 0.0, 0.0)
-        rf_seg, vf_seg, mf_seg, Δv =
-            SimsFlanagan.propagate_segment(r0, v0, m0, throttle_zero, Δt, MU_SUN, sc)
+        rf_seg, vf_seg, mf_seg, Δv = SimsFlanagan.propagate_segment(
+            r0, v0, m0, throttle_zero, Δt, MU_SUN, sc
+        )
 
         rf_kep, vf_kep = SimsFlanagan.kepler_propagate(r0, v0, Δt, MU_SUN)
 
@@ -139,26 +140,12 @@ km and km/s. Values are converted as needed.
 
         # Forward propagation
         rf, vf, mf, Δv_fwd = SimsFlanagan.propagate_segment(
-            r0,
-            v0,
-            m0,
-            throttle,
-            Δt,
-            MU_SUN,
-            sc;
-            forward = Val(true),
+            r0, v0, m0, throttle, Δt, MU_SUN, sc; forward=Val(true)
         )
 
         # Backward propagation from forward result
         r_back, v_back, m_back, Δv_bwd = SimsFlanagan.propagate_segment(
-            rf,
-            vf,
-            mf,
-            throttle,
-            Δt,
-            MU_SUN,
-            sc;
-            forward = Val(false),
+            rf, vf, mf, throttle, Δt, MU_SUN, sc; forward=Val(false)
         )
 
         # Should return to original state
@@ -178,15 +165,7 @@ km and km/s. Values are converted as needed.
 
         sc = Spacecraft(200.0, 800.0, 0.5, 3000.0)
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            MU_SUN,
-            sc;
-            n_segments = 4,
-            verbosity = 0,
+            r0, v0, rf, vf, tof, MU_SUN, sc; n_segments=4, verbosity=0
         )
 
         LU, VU, MU = SimsFlanagan.get_canonical_scales(prob)
@@ -200,6 +179,4 @@ km and km/s. Values are converted as needed.
         # MU should be initial mass
         @test MU ≈ mass(sc)
     end
-
 end
-

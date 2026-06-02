@@ -88,7 +88,7 @@ end
 
 Compute the exhaust velocity [m/s] from specific impulse.
 """
-function exhaust_velocity(sc::Spacecraft; g0::Number = 9.80665)
+function exhaust_velocity(sc::Spacecraft; g0::Number=9.80665)
     return sc.isp * g0
 end
 
@@ -155,11 +155,7 @@ struct SEPSpacecraft{MT<:Number,TT<:Number,IT<:Number,RT<:Number} <: AbstractSpa
     r_ref::RT
 
     function SEPSpacecraft(
-        dry_mass::MT,
-        wet_mass::MT,
-        thrust_ref::TT,
-        isp::IT,
-        r_ref::RT,
+        dry_mass::MT, wet_mass::MT, thrust_ref::TT, isp::IT, r_ref::RT
     ) where {MT<:Number,TT<:Number,IT<:Number,RT<:Number}
         dry_mass > 0 || throw(ArgumentError("dry_mass must be positive"))
         wet_mass >= 0 || throw(ArgumentError("wet_mass must be non-negative"))
@@ -175,7 +171,7 @@ end
 
 Compute the exhaust velocity [m/s] from specific impulse.
 """
-function exhaust_velocity(sc::SEPSpacecraft; g0::Number = 9.80665)
+function exhaust_velocity(sc::SEPSpacecraft; g0::Number=9.80665)
     return sc.isp * g0
 end
 
@@ -249,9 +245,9 @@ struct SolarSail{MT<:Number,AT<:Number,CT<:Number,RT<:Number} <: AbstractSpacecr
     function SolarSail(
         dry_mass::MT,
         area::AT,
-        reflectivity::CT = 0.9,
-        r_ref::RT = 1.495978707e8;  # 1 AU in km
-        wet_mass::MT = 0.0,
+        reflectivity::CT=0.9,
+        r_ref::RT=1.495978707e8;  # 1 AU in km
+        wet_mass::MT=0.0,
     ) where {MT<:Number,AT<:Number,CT<:Number,RT<:Number}
         dry_mass > 0 || throw(ArgumentError("dry_mass must be positive"))
         area > 0 || throw(ArgumentError("area must be positive"))
@@ -322,7 +318,7 @@ has_propellant_consumption(::SolarSail) = false
 
 Solar sails have no exhaust - return Inf for compatibility.
 """
-function exhaust_velocity(::SolarSail; g0::Number = 9.80665)
+function exhaust_velocity(::SolarSail; g0::Number=9.80665)
     return Inf
 end
 
@@ -363,7 +359,7 @@ Each throttle gets random direction and magnitude in [0, 1].
 """
 struct RandomGuess <: AbstractInitialGuess
     seed::Int
-    RandomGuess(; seed::Int = 1234) = new(seed)
+    RandomGuess(; seed::Int=1234) = new(seed)
 end
 
 """
@@ -378,8 +374,11 @@ Use constant throttle direction for all segments.
 struct ConstantGuess <: AbstractInitialGuess
     direction::Vector{Float64}
     magnitude::Float64
-    ConstantGuess(; direction::AbstractVector = [1.0, 1.0, 1.0], magnitude::Float64 = 0.5) =
+    function ConstantGuess(;
+        direction::AbstractVector=[1.0, 1.0, 1.0], magnitude::Float64=0.5
+    )
         new(collect(Float64, direction), magnitude)
+    end
 end
 
 """
@@ -393,7 +392,7 @@ Useful for solar sail problems.
 """
 struct RadialGuess <: AbstractInitialGuess
     magnitude::Float64
-    RadialGuess(; magnitude::Float64 = 0.5) = new(magnitude)
+    RadialGuess(; magnitude::Float64=0.5) = new(magnitude)
 end
 
 # =============================================================================
@@ -425,12 +424,12 @@ struct SimsFlanaganOptions
     sundman_c::Float64
 
     function SimsFlanaganOptions(;
-        n_segments::Int = 10,
-        n_fwd::Int = n_segments ÷ 2,
-        tol::Float64 = 1e-6,
-        max_iter::Int = 1000,
-        verbosity::Int = 1,
-        sundman_c::Float64 = 0.0,  # Default to no Sundman (equal segments) - enable after debugging``
+        n_segments::Int=10,
+        n_fwd::Int=n_segments ÷ 2,
+        tol::Float64=1e-6,
+        max_iter::Int=1000,
+        verbosity::Int=1,
+        sundman_c::Float64=0.0,  # Default to no Sundman (equal segments) - enable after debugging``
     )
         n_segments > 0 || throw(ArgumentError("n_segments must be positive"))
         0 < n_fwd <= n_segments || throw(ArgumentError("n_fwd must be in (0, n_segments]"))
@@ -522,8 +521,9 @@ struct SimsFlanaganSolution{
 end
 
 # Convenience accessor for backwards compatibility
-Base.propertynames(::SimsFlanaganSolution) =
+function Base.propertynames(::SimsFlanaganSolution)
     (:problem, :throttles, :masses, :mismatch, :Δv_total, :retcode, :iterations, :converged)
+end
 
 function Base.getproperty(sol::SimsFlanaganSolution, s::Symbol)
     if s === :converged
@@ -536,12 +536,14 @@ end
 
 # Mismatch component accessors
 """Position mismatch at match point [km]"""
-position_mismatch(sol::SimsFlanaganSolution) =
+function position_mismatch(sol::SimsFlanaganSolution)
     SVector{3}(sol.mismatch[1], sol.mismatch[2], sol.mismatch[3])
+end
 
 """Velocity mismatch at match point [km/s]"""
-velocity_mismatch(sol::SimsFlanaganSolution) =
+function velocity_mismatch(sol::SimsFlanaganSolution)
     SVector{3}(sol.mismatch[4], sol.mismatch[5], sol.mismatch[6])
+end
 
 """Mass mismatch at match point [kg]"""
 mass_mismatch(sol::SimsFlanaganSolution) = sol.mismatch[7]
@@ -628,14 +630,14 @@ prob3 = remake(prob; spacecraft=new_spacecraft)
 """
 function SciMLBase.remake(
     prob::SimsFlanaganProblem;
-    r0 = nothing,
-    v0 = nothing,
-    rf = nothing,
-    vf = nothing,
-    tof = nothing,
-    μ = nothing,
-    spacecraft = nothing,
-    options = nothing,
+    r0=nothing,
+    v0=nothing,
+    rf=nothing,
+    vf=nothing,
+    tof=nothing,
+    μ=nothing,
+    spacecraft=nothing,
+    options=nothing,
 )
     return SimsFlanaganProblem(
         r0 === nothing ? prob.r0 : r0,

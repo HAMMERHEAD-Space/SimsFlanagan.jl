@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: "1.11"
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - name: Extract Package Name from Project.toml
         id: extract-package-name
         run: |
@@ -48,7 +48,7 @@ jobs:
           mkdir -p plots
           benchpkgplot ${{ steps.extract-package-name.outputs.package_name }} --rev="${{github.event.repository.default_branch}},${{github.event.pull_request.head.sha}}" --npart=10 --format=png --input-dir=results/ --output-dir=plots/
       - name: Upload plot as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: plots
           path: plots
@@ -66,7 +66,8 @@ jobs:
           echo 'Go to "Actions"->"Benchmark a pull request"->[the most recent run]->"Artifacts" (at the bottom).' >> body.md
 
       - name: Find Comment
-        uses: peter-evans/find-comment@v3
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: peter-evans/find-comment@v4
         id: fcbenchmark
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -74,7 +75,8 @@ jobs:
           body-includes: Benchmark Results
 
       - name: Comment on PR
-        uses: peter-evans/create-or-update-comment@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.fcbenchmark.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}

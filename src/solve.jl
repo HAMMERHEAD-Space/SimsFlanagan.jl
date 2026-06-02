@@ -57,10 +57,10 @@ Flatten throttle SVectors to a plain vector for optimization.
 function throttles_to_vector(throttles::AbstractVector{<:AbstractVector{T}}) where {T}
     n = length(throttles)
     x = Vector{T}(undef, 3 * n)
-    for i = 1:n
-        x[3*(i-1)+1] = throttles[i][1]
-        x[3*(i-1)+2] = throttles[i][2]
-        x[3*(i-1)+3] = throttles[i][3]
+    for i in 1:n
+        x[3 * (i - 1) + 1] = throttles[i][1]
+        x[3 * (i - 1) + 2] = throttles[i][2]
+        x[3 * (i - 1) + 3] = throttles[i][3]
     end
     return x
 end
@@ -72,8 +72,10 @@ Convert flat vector back to throttle SVectors.
 """
 function vector_to_throttles(x::AbstractVector{T}, n_segments::Int) where {T}
     throttles = Vector{SVector{3,T}}(undef, n_segments)
-    for i = 1:n_segments
-        throttles[i] = SVector{3,T}(x[3*(i-1)+1], x[3*(i-1)+2], x[3*(i-1)+3])
+    for i in 1:n_segments
+        throttles[i] = SVector{3,T}(
+            x[3 * (i - 1) + 1], x[3 * (i - 1) + 2], x[3 * (i - 1) + 3]
+        )
     end
     return throttles
 end
@@ -93,8 +95,7 @@ Returns normalized constraints using canonical units:
 - Mass: Δm / MU (mass unit)
 """
 function scaled_mismatch_constraints(
-    problem::SimsFlanaganProblem,
-    throttles::AbstractVector{<:AbstractVector},
+    problem::SimsFlanaganProblem, throttles::AbstractVector{<:AbstractVector}
 )
     mismatch = compute_mismatch(problem, throttles)
 
@@ -123,11 +124,11 @@ Returns n_segments values, each being (|throttle|² - 1).
 Constraint is satisfied when ≤ 0.
 """
 function throttle_magnitude_constraints(
-    throttles::AbstractVector{<:AbstractVector{T}},
+    throttles::AbstractVector{<:AbstractVector{T}}
 ) where {T}
     n = length(throttles)
     constraints = Vector{T}(undef, n)
-    for i = 1:n
+    for i in 1:n
         # |throttle|² - 1 ≤ 0
         constraints[i] = dot(throttles[i], throttles[i]) - one(T)
     end
@@ -159,17 +160,17 @@ Solve a Sims-Flanagan trajectory optimization problem using MadNLP.
 """
 function SciMLBase.solve(
     prob::SimsFlanaganProblem;
-    initial_guess::Union{Nothing,AbstractVector{<:AbstractVector}} = nothing,
-    initial_guess_strategy::AbstractInitialGuess = RandomGuess(),
-    max_iter::Int = prob.options.max_iter,
-    tol::Float64 = prob.options.tol,
+    initial_guess::Union{Nothing,AbstractVector{<:AbstractVector}}=nothing,
+    initial_guess_strategy::AbstractInitialGuess=RandomGuess(),
+    max_iter::Int=prob.options.max_iter,
+    tol::Float64=prob.options.tol,
 )
     return _solve_internal(
         prob;
-        initial_guess = initial_guess,
-        initial_guess_strategy = initial_guess_strategy,
-        max_iter = max_iter,
-        tol = tol,
+        initial_guess=initial_guess,
+        initial_guess_strategy=initial_guess_strategy,
+        max_iter=max_iter,
+        tol=tol,
     )
 end
 
@@ -186,15 +187,15 @@ See `solve` for full documentation.
 """
 function simsflanagan_solve(
     problem::SimsFlanaganProblem;
-    initial_guess::Union{Nothing,AbstractVector{<:AbstractVector}} = nothing,
-    initial_guess_strategy::AbstractInitialGuess = RandomGuess(),
-    maxiters::Int = problem.options.max_iter,
+    initial_guess::Union{Nothing,AbstractVector{<:AbstractVector}}=nothing,
+    initial_guess_strategy::AbstractInitialGuess=RandomGuess(),
+    maxiters::Int=problem.options.max_iter,
 )
     return SciMLBase.solve(
         problem;
-        initial_guess = initial_guess,
-        initial_guess_strategy = initial_guess_strategy,
-        max_iter = maxiters,
+        initial_guess=initial_guess,
+        initial_guess_strategy=initial_guess_strategy,
+        max_iter=maxiters,
     )
 end
 
@@ -207,10 +208,10 @@ Internal solve implementation using MadNLP.
 """
 function _solve_internal(
     problem::SimsFlanaganProblem;
-    initial_guess::Union{Nothing,AbstractVector{<:AbstractVector}} = nothing,
-    initial_guess_strategy::AbstractInitialGuess = RandomGuess(),
-    max_iter::Int = problem.options.max_iter,
-    tol::Float64 = problem.options.tol,
+    initial_guess::Union{Nothing,AbstractVector{<:AbstractVector}}=nothing,
+    initial_guess_strategy::AbstractInitialGuess=RandomGuess(),
+    max_iter::Int=problem.options.max_iter,
+    tol::Float64=problem.options.tol,
 )
     n_seg = problem.options.n_segments
     n_fwd = problem.options.n_fwd
@@ -229,12 +230,7 @@ function _solve_internal(
 
     # Pre-compute segment times (same as used in constraints for consistency)
     Δt_fwd, Δt_bwd = compute_sundman_leg_times(
-        problem.r0,
-        problem.rf,
-        problem.tof,
-        n_fwd,
-        n_bwd;
-        c = sundman_c,
+        problem.r0, problem.rf, problem.tof, n_fwd, n_bwd; c=sundman_c
     )
     Δt_segments = vcat(Δt_fwd, Δt_bwd)
 
@@ -253,13 +249,13 @@ function _solve_internal(
 
         # Equality constraints: scaled mismatch = 0
         mismatch = scaled_mismatch_constraints(problem, throttles)
-        for i = 1:7
+        for i in 1:7
             res[i] = mismatch[i]
         end
 
         # Inequality constraints: |throttle|² - 1 ≤ 0
-        for i = 1:n_seg
-            res[7+i] = dot(throttles[i], throttles[i]) - 1.0
+        for i in 1:n_seg
+            res[7 + i] = dot(throttles[i], throttles[i]) - 1.0
         end
 
         return nothing
@@ -275,32 +271,24 @@ function _solve_internal(
 
     # Build Optimization.jl problem with constraints
     opt_f = Optimization.OptimizationFunction(
-        objective,
-        Optimization.AutoForwardDiff();
-        cons = constraints!,
+        objective, Optimization.AutoForwardDiff(); cons=constraints!
     )
 
     opt_prob = Optimization.OptimizationProblem(
-        opt_f,
-        x0,
-        nothing;
-        lb = lb,
-        ub = ub,
-        lcons = lcons,
-        ucons = ucons,
+        opt_f, x0, nothing; lb=lb, ub=ub, lcons=lcons, ucons=ucons
     )
 
-    # Create MadNLP optimizer
-    optimizer = MadNLP.Optimizer(; linear_solver = MadNLPMumps.MumpsSolver)
+    # Create MadNLP optimizer (uses default linear solver)
+    optimizer = MadNLP.Optimizer()
 
     # Solve
     opt_sol = Optimization.solve(
         opt_prob,
         optimizer;
-        max_iter = max_iter,
-        print_level = problem.options.verbosity > 0 ? MadNLP.INFO : MadNLP.ERROR,
-        tol = tol,
-        nlp_scaling = false,
+        max_iter=max_iter,
+        print_level=problem.options.verbosity > 0 ? MadNLP.INFO : MadNLP.ERROR,
+        tol=tol,
+        nlp_scaling=false,
     )
 
     return _build_solution(problem, opt_sol, tol)
@@ -324,12 +312,7 @@ function _build_solution(problem::SimsFlanaganProblem, opt_sol, tol::Float64)
 
     # Compute segment times (consistent with constraints)
     Δt_fwd, Δt_bwd = compute_sundman_leg_times(
-        problem.r0,
-        problem.rf,
-        problem.tof,
-        n_fwd,
-        n_bwd;
-        c = sundman_c,
+        problem.r0, problem.rf, problem.tof, n_fwd, n_bwd; c=sundman_c
     )
     Δt_segments = vcat(Δt_fwd, Δt_bwd)
 
@@ -359,13 +342,7 @@ function _build_solution(problem::SimsFlanaganProblem, opt_sol, tol::Float64)
     end
 
     return SimsFlanaganSolution(
-        problem,
-        throttles,
-        masses,
-        mismatch,
-        Δv_total,
-        retcode,
-        iterations,
+        problem, throttles, masses, mismatch, Δv_total, retcode, iterations
     )
 end
 
@@ -388,7 +365,7 @@ For solar sails, mass remains constant throughout the trajectory.
 function compute_segment_masses(
     problem::SimsFlanaganProblem,
     throttles::AbstractVector{<:AbstractVector},
-    Δt_segments::Union{Nothing,AbstractVector} = nothing,
+    Δt_segments::Union{Nothing,AbstractVector}=nothing,
 )
     n_seg = problem.options.n_segments
     spacecraft = problem.spacecraft
@@ -399,8 +376,8 @@ function compute_segment_masses(
 
     # Solar sails have constant mass
     if !has_propellant_consumption(spacecraft)
-        for i = 1:n_seg
-            masses[i+1] = masses[1]
+        for i in 1:n_seg
+            masses[i + 1] = masses[1]
         end
         return masses
     end
@@ -410,7 +387,7 @@ function compute_segment_masses(
     ref_thrust = get_reference_thrust(spacecraft)
 
     dry_mass = spacecraft.dry_mass
-    for i = 1:n_seg
+    for i in 1:n_seg
         # Get segment duration
         Δt_seg = Δt_segments === nothing ? problem.tof / n_seg : Δt_segments[i]
 
@@ -421,7 +398,7 @@ function compute_segment_masses(
         # Can only consume propellant, not dry mass
         available_propellant = masses[i] - dry_mass
         Δm = min(Δm, max(available_propellant, zero(T)))
-        masses[i+1] = masses[i] - Δm
+        masses[i + 1] = masses[i] - Δm
     end
 
     return masses

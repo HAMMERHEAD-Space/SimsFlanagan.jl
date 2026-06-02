@@ -44,21 +44,20 @@ function simsflanagan_problem(
     tof::TT,
     μ::MT,
     spacecraft::AbstractSpacecraft;
-    n_segments::Int = 10,
-    n_fwd::Int = n_segments ÷ 2,
-    tol::Float64 = 1e-6,
-    max_iter::Int = 1000,
-    verbosity::Int = 1,
-    sundman_c::Float64 = 0.0,  # Default to equal segments
+    n_segments::Int=10,
+    n_fwd::Int=n_segments ÷ 2,
+    tol::Float64=1e-6,
+    max_iter::Int=1000,
+    verbosity::Int=1,
+    sundman_c::Float64=0.0,  # Default to equal segments
 ) where {RT1<:Number,VT1<:Number,RT2<:Number,VT2<:Number,TT<:Number,MT<:Number}
-
     options = SimsFlanaganOptions(;
-        n_segments = n_segments,
-        n_fwd = n_fwd,
-        tol = tol,
-        max_iter = max_iter,
-        verbosity = verbosity,
-        sundman_c = sundman_c,
+        n_segments=n_segments,
+        n_fwd=n_fwd,
+        tol=tol,
+        max_iter=max_iter,
+        verbosity=verbosity,
+        sundman_c=sundman_c,
     )
 
     return SimsFlanaganProblem(
@@ -100,7 +99,7 @@ function initial_guess_lambert(problem::SimsFlanaganProblem{T}) where {T}
 
     # Solar sails can't use Lambert-based initialization
     if spacecraft isa SolarSail
-        return initial_guess_radial(problem; magnitude = 0.5)
+        return initial_guess_radial(problem; magnitude=0.5)
     end
 
     # Solve Lambert problem
@@ -114,8 +113,9 @@ function initial_guess_lambert(problem::SimsFlanaganProblem{T}) where {T}
         perp = abs(rf_hat[1]) < T(0.9) ? SVector{3,T}(1, 0, 0) : SVector{3,T}(0, 1, 0)
         perp = normalize(perp - dot(perp, rf_hat) * rf_hat)
         rf_perturbed = problem.rf + perp * one(T)
-        lambert_prob =
-            Lambert.LambertProblem(problem.μ, problem.r0, rf_perturbed, problem.tof)
+        lambert_prob = Lambert.LambertProblem(
+            problem.μ, problem.r0, rf_perturbed, problem.tof
+        )
     end
 
     lambert_sol = Lambert.solve(lambert_prob)
@@ -148,7 +148,7 @@ function initial_guess_lambert(problem::SimsFlanaganProblem{T}) where {T}
         else
             throttle_fwd = SVector{3,T}(0.0, 0.0, 0.0)
         end
-        for i = 1:n_fwd
+        for i in 1:n_fwd
             throttles[i] = throttle_fwd
         end
     end
@@ -162,7 +162,7 @@ function initial_guess_lambert(problem::SimsFlanaganProblem{T}) where {T}
         else
             throttle_bwd = SVector{3,T}(0.0, 0.0, 0.0)
         end
-        for i = (n_fwd+1):n_seg
+        for i in (n_fwd + 1):n_seg
             throttles[i] = throttle_bwd
         end
     end
@@ -202,7 +202,7 @@ Generate a zero initial guess for throttle vectors.
 """
 function initial_guess_zero(problem::SimsFlanaganProblem{T}) where {T}
     n_seg = problem.options.n_segments
-    return [SVector{3,T}(0.0, 0.0, 0.0) for _ = 1:n_seg]
+    return [SVector{3,T}(0.0, 0.0, 0.0) for _ in 1:n_seg]
 end
 
 """
@@ -221,17 +221,17 @@ or along the velocity direction.
 - `throttles::Vector{SVector{3}}`: Radial throttle vectors
 """
 function initial_guess_radial(
-    problem::SimsFlanaganProblem{T};
-    magnitude::Number = 0.5,
+    problem::SimsFlanaganProblem{T}; magnitude::Number=0.5
 ) where {T}
     n_seg = problem.options.n_segments
 
     # Use direction from initial position (approximate Sun direction)
     r_dir = problem.r0 / norm(problem.r0)
-    throttle =
-        SVector{3,T}(magnitude * r_dir[1], magnitude * r_dir[2], magnitude * r_dir[3])
+    throttle = SVector{3,T}(
+        magnitude * r_dir[1], magnitude * r_dir[2], magnitude * r_dir[3]
+    )
 
-    return [throttle for _ = 1:n_seg]
+    return [throttle for _ in 1:n_seg]
 end
 
 """
@@ -249,13 +249,13 @@ random magnitude in [0, 1].
 # Returns
 - `throttles::Vector{SVector{3}}`: Random throttle vectors with magnitude in [0, 1]
 """
-function initial_guess_random(problem::SimsFlanaganProblem{T}; seed::Int = 1234) where {T}
+function initial_guess_random(problem::SimsFlanaganProblem{T}; seed::Int=1234) where {T}
     n_seg = problem.options.n_segments
     throttles = Vector{SVector{3,T}}(undef, n_seg)
 
     rng = Xoshiro(seed)
 
-    for i = 1:n_seg
+    for i in 1:n_seg
         # Random direction on unit sphere
         θ = 2π * rand(rng, T)
         φ = acos(2 * rand(rng, T) - 1)
@@ -263,8 +263,9 @@ function initial_guess_random(problem::SimsFlanaganProblem{T}; seed::Int = 1234)
         # Random magnitude in [0, 1]
         mag = rand(rng, T)
 
-        throttles[i] =
-            SVector{3,T}(mag * sin(φ) * cos(θ), mag * sin(φ) * sin(θ), mag * cos(φ))
+        throttles[i] = SVector{3,T}(
+            mag * sin(φ) * cos(θ), mag * sin(φ) * sin(θ), mag * cos(φ)
+        )
     end
 
     return throttles
@@ -285,26 +286,23 @@ Generate a constant initial guess with all throttles pointing in the same direct
 """
 function initial_guess_constant(
     problem::SimsFlanaganProblem{T};
-    direction::AbstractVector = [1.0, 1.0, 1.0],
-    magnitude::Number = 0.5,
+    direction::AbstractVector=[1.0, 1.0, 1.0],
+    magnitude::Number=0.5,
 ) where {T}
     n_seg = problem.options.n_segments
 
-    # Normalize direction
-    dir_norm = norm(direction)
+    dir_norm = _euclidean_norm(direction)
     if dir_norm < eps(T)
         dir = SVector{3,T}(1, 0, 0)
     else
         dir = SVector{3,T}(
-            direction[1]/dir_norm,
-            direction[2]/dir_norm,
-            direction[3]/dir_norm,
+            direction[1]/dir_norm, direction[2]/dir_norm, direction[3]/dir_norm
         )
     end
 
     throttle = T(magnitude) * dir
 
-    return [throttle for _ = 1:n_seg]
+    return [throttle for _ in 1:n_seg]
 end
 
 # =============================================================================
@@ -325,17 +323,15 @@ function generate_initial_guess(problem::SimsFlanaganProblem, ::ZeroGuess)
 end
 
 function generate_initial_guess(problem::SimsFlanaganProblem, strategy::RandomGuess)
-    return initial_guess_random(problem; seed = strategy.seed)
+    return initial_guess_random(problem; seed=strategy.seed)
 end
 
 function generate_initial_guess(problem::SimsFlanaganProblem, strategy::ConstantGuess)
     return initial_guess_constant(
-        problem;
-        direction = strategy.direction,
-        magnitude = strategy.magnitude,
+        problem; direction=strategy.direction, magnitude=strategy.magnitude
     )
 end
 
 function generate_initial_guess(problem::SimsFlanaganProblem, strategy::RadialGuess)
-    return initial_guess_radial(problem; magnitude = strategy.magnitude)
+    return initial_guess_radial(problem; magnitude=strategy.magnitude)
 end

@@ -15,14 +15,7 @@
         Δt = 86400.0
 
         rf, vf, mf, Δv = SimsFlanagan.propagate_segment(
-            r0,
-            v0,
-            m0,
-            throttle,
-            Δt,
-            μ_sun,
-            sep;
-            forward = Val(true),
+            r0, v0, m0, throttle, Δt, μ_sun, sep; forward=Val(true)
         )
 
         @test mf < m0
@@ -41,19 +34,10 @@
         tof = 86400.0 * 120
 
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            μ_sun,
-            sep;
-            n_segments = 12,
-            verbosity = 0,
-            tol = 1e-4,
+            r0, v0, rf, vf, tof, μ_sun, sep; n_segments=12, verbosity=0, tol=1e-4
         )
 
-        sol = solve(prob; max_iter = 500, initial_guess_strategy = RandomGuess(seed = 42))
+        sol = solve(prob; max_iter=500, initial_guess_strategy=RandomGuess(seed=42))
 
         @test sol isa SimsFlanaganSolution
         @test sol.masses[end] <= mass(sep)
@@ -71,14 +55,7 @@
         Δt = 86400.0
 
         rf, vf, mf, Δv = SimsFlanagan.propagate_segment(
-            r0,
-            v0,
-            m0,
-            throttle,
-            Δt,
-            μ_sun,
-            sail;
-            forward = Val(true),
+            r0, v0, m0, throttle, Δt, μ_sun, sail; forward=Val(true)
         )
 
         @test mf == m0  # Mass constant for solar sail
@@ -93,18 +70,11 @@
         v0 = SVector{3}(0.0, 29.78, 0.0)
         m0 = mass(sail)
 
-        throttles = [SVector{3}(1.0, 0.0, 0.0) for _ = 1:5]
+        throttles = [SVector{3}(1.0, 0.0, 0.0) for _ in 1:5]
         Δt_seg = 86400.0
 
         rf, vf, mf, total_Δv = SimsFlanagan.propagate_leg(
-            r0,
-            v0,
-            m0,
-            throttles,
-            Δt_seg,
-            μ_sun,
-            sail;
-            forward = Val(true),
+            r0, v0, m0, throttles, Δt_seg, μ_sun, sail; forward=Val(true)
         )
 
         @test mf == m0
@@ -121,19 +91,10 @@
         tof = 86400.0 * 60
 
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            μ_sun,
-            sail;
-            n_segments = 8,
-            verbosity = 0,
-            tol = 1e-4,
+            r0, v0, rf, vf, tof, μ_sun, sail; n_segments=8, verbosity=0, tol=1e-4
         )
 
-        sol = solve(prob; initial_guess_strategy = RadialGuess())
+        sol = solve(prob; initial_guess_strategy=RadialGuess())
 
         @test all(m -> m == mass(sail), sol.masses)
     end
@@ -148,11 +109,11 @@
             86400.0 * 30,
             μ_sun,
             sail;
-            n_segments = 4,
-            verbosity = 0,
+            n_segments=4,
+            verbosity=0,
         )
 
-        throttles = [SVector{3}(0.5, 0.0, 0.0) for _ = 1:4]
+        throttles = [SVector{3}(0.5, 0.0, 0.0) for _ in 1:4]
         masses = SimsFlanagan.compute_segment_masses(prob_sail, throttles)
         @test all(m -> m == mass(sail), masses)
 
@@ -165,13 +126,13 @@
             86400.0 * 30,
             μ_sun,
             sc;
-            n_segments = 4,
-            verbosity = 0,
+            n_segments=4,
+            verbosity=0,
         )
 
         masses_sc = SimsFlanagan.compute_segment_masses(prob_sc, throttles)
         @test masses_sc[1] == mass(sc)
-        @test all(i -> masses_sc[i+1] <= masses_sc[i], 1:4)
+        @test all(i -> masses_sc[i + 1] <= masses_sc[i], 1:4)
     end
 
     @testset "Spacecraft types produce valid solutions" begin
@@ -186,20 +147,10 @@
         @testset "Low-Thrust" begin
             sc = Spacecraft(100.0, 400.0, 10.0, 3000.0)
             prob = simsflanagan_problem(
-                r0,
-                v0,
-                rf,
-                vf,
-                tof,
-                μ,
-                sc;
-                n_segments = 10,
-                verbosity = 0,
-                tol = 1e-4,
+                r0, v0, rf, vf, tof, μ, sc; n_segments=10, verbosity=0, tol=1e-4
             )
 
-            sol =
-                solve(prob; max_iter = 500, initial_guess_strategy = RandomGuess(seed = 42))
+            sol = solve(prob; max_iter=500, initial_guess_strategy=RandomGuess(seed=42))
 
             @test sol isa SimsFlanaganSolution
             @test sol.masses[end] <= mass(sc)
@@ -210,20 +161,10 @@
         @testset "SEP" begin
             sep = SEPSpacecraft(100.0, 400.0, 10.0, 3000.0, 7000.0)
             prob = simsflanagan_problem(
-                r0,
-                v0,
-                rf,
-                vf,
-                tof,
-                μ,
-                sep;
-                n_segments = 10,
-                verbosity = 0,
-                tol = 1e-4,
+                r0, v0, rf, vf, tof, μ, sep; n_segments=10, verbosity=0, tol=1e-4
             )
 
-            sol =
-                solve(prob; max_iter = 500, initial_guess_strategy = RandomGuess(seed = 42))
+            sol = solve(prob; max_iter=500, initial_guess_strategy=RandomGuess(seed=42))
 
             @test sol isa SimsFlanaganSolution
             @test sol.masses[end] <= mass(sep)
@@ -249,12 +190,12 @@
                 tof_sun,
                 μ_sun,
                 sail;
-                n_segments = 15,
-                verbosity = 0,
-                tol = 1e-4,
+                n_segments=15,
+                verbosity=0,
+                tol=1e-4,
             )
 
-            sol = solve(prob; initial_guess_strategy = RadialGuess())
+            sol = solve(prob; initial_guess_strategy=RadialGuess())
 
             println(position_mismatch_norm(sol))
             println(velocity_mismatch_norm(sol))

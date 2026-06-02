@@ -49,7 +49,7 @@ if _DIFF_ENV ∉ ("false", "")
             (
                 "Enzyme",
                 DifferentiationInterface.AutoEnzyme(;
-                    mode = Enzyme.set_runtime_activity(Enzyme.Forward),
+                    mode=Enzyme.set_runtime_activity(Enzyme.Forward)
                 ),
             ),
         )
@@ -58,7 +58,7 @@ if _DIFF_ENV ∉ ("false", "")
         using Mooncake
         push!(
             _backend_list,
-            ("Mooncake", DifferentiationInterface.AutoMooncake(; config = nothing)),
+            ("Mooncake", DifferentiationInterface.AutoMooncake(; config=nothing)),
         )
     end
     if _need("PolyesterForwardDiff")
@@ -93,16 +93,16 @@ end
 
 @testset "Aqua Tests" begin
     Aqua.test_all(
-        SimsFlanagan;
-        ambiguities = (recursive = false),
-        deps_compat = (check_extras = false),
+        SimsFlanagan; ambiguities=(recursive = false), deps_compat=(check_extras = false)
     )
 end
 
 @testset "JET Testing" begin
-    rep = JET.test_package(
-        SimsFlanagan;
-        toplevel_logger = nothing,
-        target_modules = (@__MODULE__,),
-    )
+    if VERSION >= v"1.12"
+        @info "Skipping JET on Julia 1.12+ (dependency false positives in SymbolicUtils/OptimizationMOI code generation)"
+    else
+        rep = JET.test_package(
+            SimsFlanagan; toplevel_logger=nothing, target_modules=(@__MODULE__,)
+        )
+    end
 end

@@ -17,7 +17,7 @@ using LinearAlgebra
         rf = [1.5*AU, 0.0, 0.0]
         tof = 200.0 * 86400.0
 
-        Δt_fwd, Δt_bwd = SimsFlanagan.compute_sundman_leg_times(r0, rf, tof, 5, 5; c = 0.0)
+        Δt_fwd, Δt_bwd = SimsFlanagan.compute_sundman_leg_times(r0, rf, tof, 5, 5; c=0.0)
 
         @test length(Δt_fwd) == 5
         @test length(Δt_bwd) == 5
@@ -30,7 +30,7 @@ using LinearAlgebra
         rf = [1.5*AU, 0.0, 0.0]
         tof = 200.0 * 86400.0
 
-        Δt_fwd, Δt_bwd = SimsFlanagan.compute_sundman_leg_times(r0, rf, tof, 5, 5; c = 1.0)
+        Δt_fwd, Δt_bwd = SimsFlanagan.compute_sundman_leg_times(r0, rf, tof, 5, 5; c=1.0)
 
         # Moving outward: later segments should be longer
         @test Δt_fwd[5] > Δt_fwd[1]
@@ -42,7 +42,7 @@ using LinearAlgebra
         rf = [1.5*AU, 0.0, 0.0]
         tof = 180.0 * 86400.0
 
-        Δt_fwd, Δt_bwd = SimsFlanagan.compute_sundman_leg_times(r0, rf, tof, 5, 5; c = 1.5)
+        Δt_fwd, Δt_bwd = SimsFlanagan.compute_sundman_leg_times(r0, rf, tof, 5, 5; c=1.5)
 
         # Larger c means more variation
         ratio = Δt_bwd[end] / Δt_fwd[1]
@@ -66,24 +66,11 @@ end
 
     @testset "c=0 (equal segments)" begin
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            μ,
-            sc;
-            n_segments = 10,
-            n_fwd = 5,
-            verbosity = 0,
-            sundman_c = 0.0,
+            r0, v0, rf, vf, tof, μ, sc; n_segments=10, n_fwd=5, verbosity=0, sundman_c=0.0
         )
 
         sol = solve(
-            prob;
-            initial_guess_strategy = RandomGuess(seed = 42),
-            max_iter = 500,
-            tol = 1e-4,
+            prob; initial_guess_strategy=RandomGuess(seed=42), max_iter=500, tol=1e-4
         )
 
         @test position_mismatch_norm(sol) < 10.0
@@ -91,24 +78,11 @@ end
 
     @testset "c=1.0 (Sundman)" begin
         prob = simsflanagan_problem(
-            r0,
-            v0,
-            rf,
-            vf,
-            tof,
-            μ,
-            sc;
-            n_segments = 10,
-            n_fwd = 5,
-            verbosity = 0,
-            sundman_c = 1.0,
+            r0, v0, rf, vf, tof, μ, sc; n_segments=10, n_fwd=5, verbosity=0, sundman_c=1.0
         )
 
         sol = solve(
-            prob;
-            initial_guess_strategy = RandomGuess(seed = 42),
-            max_iter = 500,
-            tol = 1e-4,
+            prob; initial_guess_strategy=RandomGuess(seed=42), max_iter=500, tol=1e-4
         )
 
         @test position_mismatch_norm(sol) < 10.0
